@@ -49,13 +49,14 @@ the property worth having, and exactly what a backfiller needs you to give up.
 
 | | |
 | --- | --- |
-| **App** | *not yet deployed — `render.yaml` is a one-click blueprint, see below* |
+| **App** | https://PODARENA_URL_HERE — the staged demo, live |
 | **Contract** | [`0xf56b105C35d9C7c443E829A24a6cAb014f9e8353`](https://testnet.monadvision.com/address/0xf56b105C35d9C7c443E829A24a6cAb014f9e8353) — `TrackRecordRegistry`, [deploy tx](https://testnet.monadvision.com/tx/0x9289228705b4de5871eb888420a1d272d2d2b59a2a1538305df4e48a7238ff37) in block 51986893 |
 | **Chain** | Monad Testnet, id `10143`, RPC `https://testnet-rpc.monad.xyz` |
 | **Explorer** | https://testnet.monadvision.com |
 
-The app still needs a Render account; instructions are in [Deploy](#deploy) and take about
-five minutes. Everything else runs today.
+Three records are already staged there — open the allocator links in
+[Demo credentials](#demo-credentials) and nothing needs typing. To run your own instance,
+[Deploy](#deploy) takes about five minutes.
 
 Without a contract address the app still computes and stores Merkle roots — it marks them
 unanchored rather than pretending otherwise.
@@ -325,5 +326,4 @@ migration tool implies a guarantee about upgrade paths that has never been exerc
   client-side toggle to defeat.
 - **Cold verify** — the bundle proves itself with no access to the API.
 
-Built from [`docs/build-plan.md`](./docs/build-plan.md). Strategy in
-[`docs/strategy.md`](./docs/strategy.md).
+Built from [`docs/build-plan.md`](./docs/build-plan.md).
