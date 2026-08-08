@@ -189,8 +189,10 @@ export function Home() {
           </div>
           <div className="opt opt-bad reveal" style={delay(0.08)}>
             <span className="opt-mark">✕</span>
-            <h3>The bank's API</h3>
-            <p className="small muted">Goldman is not going to sign your letter.</p>
+            <h3>Our word for it</h3>
+            <p className="small muted">
+              A platform vouching for its own customer proves nothing.
+            </p>
           </div>
           <div className="opt opt-good reveal" style={delay(0.16)}>
             <span className="opt-mark opt-mark-on">✓</span>
