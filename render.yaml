@@ -12,6 +12,11 @@ services:
     healthCheckPath: /api/health
     autoDeploy: true
 
+    # The branch we actually develop on. Without this Render deploys the repo's
+    # default branch, which is how a fix can sit committed and reviewed and
+    # still not be the code that is running.
+    branch: feat/manager-console
+
     disk:
       # Raw documents are write-once and content-addressed. They must survive a
       # redeploy or the DKIM proofs go with them.
