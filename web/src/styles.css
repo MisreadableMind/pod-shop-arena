@@ -260,12 +260,11 @@ code,
   color: rgba(251, 247, 240, 0.86);
 }
 
-/* One way in. The hero earns the click; everything below it is for people who
-   want to know why before they take it. */
+/* Two ways in, one loud and one quiet: look at a record, or take a seat. */
 .hero-cta {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 12px;
   flex-wrap: wrap;
   margin-top: 30px;
 }
@@ -278,45 +277,28 @@ code,
   font-weight: 500;
   font-size: 0.98rem;
   text-decoration: none;
-  transition: transform var(--step), background var(--step);
+  transition: transform var(--step), background var(--step), border-color var(--step);
 }
 .cta:hover {
   background: #fff;
   transform: translateX(2px);
 }
+.cta-ghost {
+  background: transparent;
+  color: #fbf7f0;
+  border: 1px solid rgba(251, 247, 240, 0.42);
+}
+.cta-ghost:hover {
+  background: rgba(251, 247, 240, 0.12);
+  border-color: rgba(251, 247, 240, 0.78);
+}
 .cta-note {
-  max-width: 40ch;
+  display: block;
+  max-width: 44ch;
+  margin: 16px 0 0;
   font-size: 0.8rem;
   line-height: 1.5;
   color: rgba(251, 247, 240, 0.68);
-}
-
-/* How it works: three steps, because there are three. */
-.steps {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-  margin-bottom: 20px;
-}
-.step {
-  background: var(--surface-card);
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius-card);
-  padding: 20px 22px 22px;
-}
-.step-n {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.12em;
-  color: var(--text-dim);
-}
-.step h3 {
-  margin: 8px 0 8px;
-  font-size: 1.02rem;
-}
-.step p {
-  margin: 0;
-  color: var(--text-dim);
 }
 
 /* Dark footer, bookending the arc. */
@@ -856,15 +838,11 @@ input[type="text"]:focus {
 /* Doors on the landing page. Three seats, three left-edge marks: the fund is
    onyx, the PM is steel, the allocator is unmarked because they are outside the
    wall and that is the point. */
-.two-doors,
 .three-doors {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 14px;
   margin-bottom: 20px;
-}
-.three-doors {
-  grid-template-columns: repeat(3, 1fr);
 }
 .door-fund,
 .door-pm {
@@ -1079,11 +1057,475 @@ button.small-btn {
   border-color: var(--hairline-strong);
 }
 
+/* Landing page ---------------------------------------------------------
+
+   The public page is the only surface here that has to sell rather than
+   report, so it is the only one that moves: sections arrive as you reach
+   them, the pipeline's connectors run, and the hero card checks a signature
+   on a loop. All of it is decoration laid over a page that reads perfectly
+   well standing still, which is exactly why prefers-reduced-motion turns
+   every bit of it off at the bottom of this block. Motion that carried
+   information could not be switched off like that. */
+
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 0.6s cubic-bezier(0.22, 0.7, 0.3, 1),
+    transform 0.6s cubic-bezier(0.22, 0.7, 0.3, 1);
+  transition-delay: var(--d, 0s);
+  will-change: opacity, transform;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+
+.section {
+  margin-bottom: 66px;
+}
+.section:last-of-type {
+  margin-bottom: 40px;
+}
+.section-head {
+  margin-bottom: 24px;
+}
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-mono);
+  font-size: 0.67rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--text-dim);
+}
+.eyebrow::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--hairline);
+}
+.section-head h2 {
+  margin-top: 12px;
+  font-size: clamp(1.55rem, 2.7vw, 2.05rem);
+  max-width: 24ch;
+}
+
+/* Hero: copy on the umber half where the scrim is, the animated card on the
+   cream half where a dark panel reads best. */
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 52px;
+  align-items: center;
+}
+
+.proof-card {
+  background: rgba(16, 19, 25, 0.6);
+  backdrop-filter: blur(12px) saturate(1.2);
+  -webkit-backdrop-filter: blur(12px) saturate(1.2);
+  border: 1px solid rgba(255, 255, 255, 0.17);
+  border-radius: var(--radius-card);
+  padding: 17px 19px 19px;
+  color: rgba(251, 247, 240, 0.94);
+}
+.proof-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+.proof-head .mono {
+  font-size: 0.74rem;
+}
+.proof-from {
+  font-size: 0.7rem;
+  color: rgba(251, 247, 240, 0.55);
+}
+.proof-sig {
+  position: relative;
+  overflow: hidden;
+  font-size: 0.63rem;
+  line-height: 1.55;
+  color: rgba(251, 247, 240, 0.5);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 9px;
+  padding: 8px 10px;
+  word-break: break-all;
+}
+/* The scan: a band of cream sweeps the signature, then the verdict lands. */
+.proof-sig::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -45%;
+  width: 45%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(239, 226, 202, 0.42),
+    transparent
+  );
+  animation: scan 7s ease-in-out infinite;
+}
+@keyframes scan {
+  0% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  30% {
+    transform: translateX(330%);
+    opacity: 1;
+  }
+  36%,
+  100% {
+    transform: translateX(330%);
+    opacity: 0;
+  }
+}
+.proof-rows {
+  margin: 13px 0 14px;
+}
+.proof-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.11);
+  font-size: 0.8rem;
+  color: rgba(251, 247, 240, 0.62);
+}
+.proof-row:last-child {
+  border-bottom: none;
+}
+.proof-row b {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: rgba(251, 247, 240, 0.96);
+}
+/* Both verdicts occupy the same cell so the swap has nothing to reflow. */
+.proof-verdict {
+  display: grid;
+  min-height: 26px;
+  align-items: center;
+}
+.proof-verdict > * {
+  grid-area: 1 / 1;
+}
+.proof-wait {
+  font-size: 0.66rem;
+  letter-spacing: 0.02em;
+  color: rgba(251, 247, 240, 0.5);
+  animation: waitOut 7s ease-in-out infinite;
+}
+.proof-ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  justify-self: start;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-onyx);
+  background: var(--color-cream);
+  border-radius: var(--radius-pill);
+  padding: 5px 14px;
+  animation: okIn 7s ease-in-out infinite;
+}
+.proof-tick {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+@keyframes waitOut {
+  0%,
+  33% {
+    opacity: 1;
+  }
+  39%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes okIn {
+  0%,
+  35% {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  45%,
+  93% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+    transform: none;
+  }
+}
+
+/* The three options. Two fail, and they say so with a mark rather than a
+   paragraph explaining that they failed. */
+.opts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+.opt {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-card);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  padding: 22px 24px 24px;
+}
+.opt h3 {
+  margin: 14px 0 8px;
+  font-size: 1.06rem;
+}
+.opt p {
+  margin: 0;
+}
+.opt-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  border: 1px solid var(--hairline-strong);
+  color: var(--text-dim);
+  font-size: 0.78rem;
+}
+.opt-mark-on {
+  background: var(--color-onyx);
+  border-color: var(--color-onyx);
+  color: var(--text-invert);
+}
+.opt-good {
+  border-color: var(--hairline-strong);
+}
+.opt-good::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: var(--gradient-dawn-arc);
+}
+
+/* The pipeline. Connectors are marching ants in the gutter, which is the one
+   place on this page where the motion is doing a little work: it says which
+   way the evidence travels. */
+.flow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 30px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.flow-step {
+  position: relative;
+}
+.flow-step::after {
+  content: "";
+  position: absolute;
+  top: 13px;
+  right: -30px;
+  width: 30px;
+  height: 2px;
+  background-image: linear-gradient(
+    90deg,
+    var(--hairline-strong) 0 7px,
+    transparent 7px 13px
+  );
+  background-size: 13px 2px;
+  animation: march 0.85s linear infinite;
+}
+.flow-step:last-child::after {
+  display: none;
+}
+@keyframes march {
+  to {
+    background-position: 13px 0;
+  }
+}
+.flow-n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--hairline-strong);
+  background: var(--surface-page);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+.flow-step h3 {
+  margin: 13px 0 7px;
+  font-size: 1rem;
+}
+.flow-step p {
+  margin: 0;
+}
+
+/* Same number, different evidence. The whole argument in one glance. */
+.versus {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.vs-card {
+  display: block;
+  background: var(--surface-card);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  padding: 22px 24px 24px;
+  color: inherit;
+  text-decoration: none;
+  transition: background var(--step), border-color var(--step);
+}
+.vs-card:hover {
+  background: var(--surface-inset);
+  border-color: var(--hairline-strong);
+}
+.vs-name {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+}
+.vs-value {
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 4.4vw, 3rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  margin: 10px 0 4px;
+}
+.vs-sub {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-bottom: 18px;
+}
+.vs-foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+.vs-caption {
+  max-width: 76ch;
+  margin: 16px 0 0;
+}
+
+/* Twelve months as twelve marks. Solid is a signature; the dashed one is
+   somebody's keyboard, and it keeps breathing after the rest have settled. */
+.ticks {
+  display: flex;
+  gap: 5px;
+}
+.tick {
+  flex: 1;
+  height: 24px;
+  border-radius: 4px;
+  background: var(--color-onyx);
+  transform: scaleY(0.2);
+  transform-origin: bottom;
+  opacity: 0;
+}
+.reveal.in .tick {
+  animation: tickIn 0.42s cubic-bezier(0.22, 0.7, 0.3, 1) forwards;
+  animation-delay: calc(var(--i) * 42ms + 120ms);
+}
+.tick.typed {
+  background: transparent;
+  border: 1.5px dashed var(--color-umber);
+}
+.reveal.in .tick.typed {
+  animation:
+    tickIn 0.42s cubic-bezier(0.22, 0.7, 0.3, 1) forwards,
+    breathe 2.4s ease-in-out 1s infinite;
+}
+@keyframes tickIn {
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.36;
+  }
+}
+
 @media (max-width: 900px) {
-  .two-doors,
+  .hero-grid,
   .three-doors,
-  .steps {
+  .opts,
+  .versus {
     grid-template-columns: 1fr;
+  }
+  .hero-grid {
+    gap: 34px;
+  }
+  .flow {
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .flow-step::after {
+    display: none;
+  }
+}
+
+@media (max-width: 620px) {
+  .flow {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Everything above is theatre. This turns all of it off without changing a
+   word of what the page says. */
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .proof-sig::after,
+  .proof-wait,
+  .proof-ok,
+  .flow-step::after,
+  .reveal.in .tick,
+  .reveal.in .tick.typed {
+    animation: none;
+  }
+  .proof-wait {
+    opacity: 0;
+  }
+  .proof-ok,
+  .tick {
+    opacity: 1;
+    transform: none;
   }
 }
 
