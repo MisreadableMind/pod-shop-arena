@@ -1,4 +1,4 @@
-# Pod Arena — build plan
+# PodShop Arena — build plan
 
 How the app actually works, and the order we build it in.
 
@@ -262,7 +262,7 @@ the viewer's browser:
 3. Re-fold and compare locally. Show `Verified locally` only when local math agrees.
 4. Download any original signed document and re-run DKIM independently — we ship a
    standalone verifier that takes an `.eml` plus the captured DNS record and needs no
-   Pod Arena account.
+   PodShop Arena account.
 
 If we shut down tomorrow, an allocator holding the documents can still prove everything.
 That is the standard to build to.

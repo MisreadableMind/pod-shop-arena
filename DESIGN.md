@@ -1,4 +1,4 @@
-# Pod Arena — Design Practices
+# PodShop Arena — Design Practices
 
 A living record of the conventions actually in force across this repo — product,
 architecture, backend, frontend, and the **"New Genre"** visual system. Everything

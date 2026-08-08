@@ -1,6 +1,6 @@
 """The standalone verifier.
 
-If Pod Arena shut down tomorrow, an allocator holding the .eml files, the
+If PodShop Arena shut down tomorrow, an allocator holding the .eml files, the
 captured DNS records and the contract address should still be able to prove the
 record. That is the standard the whole design is built to, and this file is
 where it either works or it doesn't.
@@ -241,7 +241,7 @@ def _domains_in(records: dict[str, Any]) -> list[str]:
 def main() -> int:
     parser = argparse.ArgumentParser(
         prog="podarena-verify",
-        description="Verify a Pod Arena record without Pod Arena.",
+        description="Verify a PodShop Arena record without PodShop Arena.",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 

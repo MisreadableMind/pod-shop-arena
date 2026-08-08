@@ -40,7 +40,7 @@ NDA_TEXT = (
 )
 
 app = FastAPI(
-    title="Pod Arena",
+    title="PodShop Arena",
     version="0.1.0",
     description="Track records an allocator can verify without trusting us.",
 )
@@ -574,7 +574,7 @@ def bundle(token: str, request: Request, db_session: SessionDep) -> Response:
 
     cfg = settings()
     manifest = {
-        "generated_by": "Pod Arena",
+        "generated_by": "PodShop Arena",
         "record": {"slug": record.slug, "name": record.name, "strategy": record.strategy},
         "snapshot": {
             "seq": snapshot.seq,
@@ -629,7 +629,7 @@ def bundle(token: str, request: Request, db_session: SessionDep) -> Response:
 
 
 _HOW_TO_VERIFY = """
-This bundle proves a track record without Pod Arena being involved.
+This bundle proves a track record without PodShop Arena being involved.
 
   1. Check the signatures. Every .eml in documents/ carries the institution's
      own DKIM signature. captured_dns.json holds the public keys exactly as they
@@ -651,7 +651,7 @@ The quickest route:
     pip install podarena          # or clone the repo
     podarena-verify bundle .
 
-If it disagrees with anything Pod Arena told you, believe this bundle.
+If it disagrees with anything PodShop Arena told you, believe this bundle.
 """
 
 

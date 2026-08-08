@@ -208,7 +208,7 @@ def seed(*, reset: bool = False, anchor: bool | None = None) -> dict[str, str]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Seed the Pod Arena demo.")
+    parser = argparse.ArgumentParser(description="Seed the PodShop Arena demo.")
     parser.add_argument("--reset", action="store_true", help="wipe existing rows first")
     parser.add_argument(
         "--no-anchor", action="store_true", help="skip the on-chain anchor"
