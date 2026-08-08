@@ -26,3 +26,6 @@ contracts/lib/
 # editors / local tooling
 .idea/
 .claude/settings.local.json
+
+# typescript incremental build cache
+web/tsconfig.tsbuildinfo
