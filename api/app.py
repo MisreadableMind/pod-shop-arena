@@ -949,29 +949,31 @@ def _record_access(
     action: str,
     request: Request,
 ) -> db.AccessEvent:
-    """Write the audit row, then commit it on-chain.
+    """Commit the access on-chain, then write the audit row once.
 
-    The row goes down first. If the chain call fails we still know who looked;
-    if we did it the other way round a network blip would lose the record of an
-    access that definitely happened.
+    The chain call goes first because it has to. `access_event` is append-only
+    in Postgres, so the row must arrive complete — filling in `chain_tx`
+    afterwards is an UPDATE, and the trigger rejects it.
+
+    That ordering costs less than it looks like it should. `log_access` never
+    raises; it catches and returns a failed receipt. So a network blip still
+    writes the row, with a null `chain_tx`, and we still know who looked. The
+    only thing we give up is a crash during the RPC itself.
     """
+    commitment = viewer_commitment(invite.viewer_email, record.viewer_salt)
+    receipt = chain_client().log_access(
+        record.chain_key, commitment, int(Profile.from_slug(invite.profile))
+    )
     event = db.AccessEvent(
         invite_id=invite.id,
         action=action,
         ip=request.client.host if request.client else None,
         ua=request.headers.get("user-agent", "")[:255] or None,
         detail={"profile": invite.profile},
+        chain_tx=receipt.tx_hash or None,
     )
     db_session.add(event)
     db_session.flush()
-
-    commitment = viewer_commitment(invite.viewer_email, record.viewer_salt)
-    receipt = chain_client().log_access(
-        record.chain_key, commitment, int(Profile.from_slug(invite.profile))
-    )
-    if receipt.tx_hash:
-        event.chain_tx = receipt.tx_hash
-        db_session.flush()
     return event
 
 
