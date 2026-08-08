@@ -302,6 +302,180 @@ def revoke_invite(
     return {"id": invite.id, "revoked_at": invite.revoked_at.isoformat()}
 
 
+def _latest_snapshot(db_session: Session, record: db.Record) -> db.Snapshot:
+    snapshot = db_session.scalar(
+        select(db.Snapshot)
+        .where(db.Snapshot.record_id == record.id)
+        .order_by(db.Snapshot.seq.desc())
+        .limit(1)
+    )
+    if snapshot is None:
+        raise HTTPException(404, "this record has no snapshot yet")
+    return snapshot
+
+
+def _projection_inputs(db_session: Session, record: db.Record) -> dict[str, Any]:
+    snapshot = _latest_snapshot(db_session, record)
+    return {
+        "record": record,
+        "snapshot": snapshot,
+        "metrics": db_session.scalars(
+            select(db.MetricRow).where(db.MetricRow.snapshot_id == snapshot.id)
+        ).all(),
+        "findings": db_session.scalars(
+            select(db.FindingRow).where(db.FindingRow.snapshot_id == snapshot.id)
+        ).all(),
+        "facts": db_session.scalars(
+            select(db.FactRow)
+            .where(db.FactRow.record_id == record.id)
+            .order_by(db.FactRow.as_of)
+        ).all(),
+        "documents": _documents(db_session, record.id),
+        "anchor": db_session.scalar(
+            select(db.Anchor).where(db.Anchor.snapshot_id == snapshot.id)
+        ),
+    }
+
+
+@app.get("/api/records/{slug}/owner")
+def owner_view(slug: str, db_session: SessionDep, _: AdminDep) -> dict[str, Any]:
+    """The record as the manager who owns it sees it: everything.
+
+    Same `project()` the allocator path uses, at the widest profile and with no
+    watermark. Running the owner view through the projection rather than around
+    it is the point — if a field is invisible to every profile, it is invisible
+    here too, and the manager finds out before an allocator does.
+    """
+    record = _record(db_session, slug)
+    payload = project(
+        profile=Profile.FULL_PLUS_POSITIONS,
+        **_projection_inputs(db_session, record),
+    )
+    payload["state"] = "owner"
+    return payload
+
+
+@app.get("/api/records/{slug}/disclosure")
+def disclosure_matrix(slug: str, db_session: SessionDep, _: AdminDep) -> dict[str, Any]:
+    """What each profile would actually put on the wire, measured.
+
+    The manager's real question is not "is it hidden in the UI" — it is "did it
+    leave the building". So this runs the projection once per profile and
+    reports the serialized size and the top-level keys that survived. A section
+    missing from `keys` is a section that does not exist in that response.
+    """
+    record = _record(db_session, slug)
+    inputs = _projection_inputs(db_session, record)
+
+    rungs = []
+    for profile in Profile:
+        payload = project(profile=profile, **inputs)
+        body = json.dumps(payload, default=str)
+        metrics = sorted({metric["key"] for metric in payload.get("metrics", [])})
+        rungs.append(
+            {
+                "profile": profile.slug,
+                "rank": int(profile),
+                "bytes": len(body.encode("utf-8")),
+                "keys": sorted(payload.keys()),
+                "metric_keys": metrics,
+                "counts": {
+                    "metrics": len(payload.get("metrics", [])),
+                    "evidence": len(payload.get("evidence", [])),
+                    "findings": len(payload.get("findings", [])),
+                    "nav_series": len(payload.get("nav_series", [])),
+                    "positions": len(payload.get("positions", [])),
+                    "merkle_leaves": len(payload.get("merkle_leaves", []) or []),
+                },
+            }
+        )
+
+    return {
+        "record": {"slug": record.slug, "name": record.name},
+        "profiles": rungs,
+        # Every section any profile can carry, so the console can draw a matrix
+        # with a row per section rather than guessing from the widest rung.
+        "sections": sorted({key for rung in rungs for key in rung["keys"]}),
+    }
+
+
+@app.get("/api/records/{slug}/preview/{profile}")
+def preview_as(
+    slug: str, profile: str, db_session: SessionDep, _: AdminDep
+) -> dict[str, Any]:
+    """The exact bytes an allocator on this profile would receive.
+
+    Not a mock-up of the allocator view — the same projection, so what the
+    manager previews and what the allocator gets cannot drift apart.
+    """
+    record = _record(db_session, slug)
+    try:
+        rung = Profile.from_slug(profile)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from None
+
+    payload = project(profile=rung, **_projection_inputs(db_session, record))
+    payload["state"] = "open"
+    payload["viewer_email"] = "preview@owner"
+    return payload
+
+
+@app.get("/api/records/{slug}/invites")
+def list_invites(slug: str, db_session: SessionDep, _: AdminDep) -> list[dict[str, Any]]:
+    """Who holds a key to this record, and what it opens.
+
+    The token itself is unrecoverable — only its hash was stored — so this is a
+    list of standing permissions, not a list of links to re-send.
+    """
+    record = _record(db_session, slug)
+    invites = db_session.scalars(
+        select(db.Invite)
+        .where(db.Invite.record_id == record.id)
+        .order_by(db.Invite.created_at)
+    ).all()
+    if not invites:
+        return []
+
+    events = db_session.scalars(
+        select(db.AccessEvent)
+        .where(db.AccessEvent.invite_id.in_([invite.id for invite in invites]))
+        .order_by(db.AccessEvent.at)
+    ).all()
+    views: dict[str, list[db.AccessEvent]] = {}
+    for event in events:
+        views.setdefault(event.invite_id, []).append(event)
+
+    now = datetime.now(timezone.utc)
+    rows = []
+    for invite in invites:
+        expires = invite.expires_at
+        if expires.tzinfo is None:
+            expires = expires.replace(tzinfo=timezone.utc)
+        seen = views.get(invite.id, [])
+        if invite.revoked_at is not None:
+            status = "revoked"
+        elif expires < now:
+            status = "expired"
+        else:
+            status = "active"
+        rows.append(
+            {
+                "id": invite.id,
+                "viewer_email": invite.viewer_email,
+                "profile": invite.profile,
+                "status": status,
+                "nda_accepted_at": invite.nda_accepted_at.isoformat()
+                if invite.nda_accepted_at
+                else None,
+                "expires_at": expires.isoformat(),
+                "created_at": invite.created_at.isoformat(),
+                "views": len([event for event in seen if event.action == "view"]),
+                "last_seen_at": seen[-1].at.isoformat() if seen else None,
+            }
+        )
+    return rows
+
+
 @app.get("/api/records/{slug}/access-log")
 def access_log(slug: str, db_session: SessionDep, _: AdminDep) -> list[dict[str, Any]]:
     record = _record(db_session, slug)
@@ -373,36 +547,13 @@ def view(token: str, request: Request, db_session: SessionDep) -> dict[str, Any]
             "nda": {"version": NDA_VERSION, "text": NDA_TEXT},
         }
 
-    snapshot = db_session.scalar(
-        select(db.Snapshot)
-        .where(db.Snapshot.record_id == record.id)
-        .order_by(db.Snapshot.seq.desc())
-        .limit(1)
-    )
-    if snapshot is None:
-        raise HTTPException(404, "this record has no snapshot yet")
+    inputs = _projection_inputs(db_session, record)
 
     _record_access(db_session, invite, record, "view", request)
 
     payload = project(
         profile=Profile.from_slug(invite.profile),
-        record=record,
-        snapshot=snapshot,
-        metrics=db_session.scalars(
-            select(db.MetricRow).where(db.MetricRow.snapshot_id == snapshot.id)
-        ).all(),
-        findings=db_session.scalars(
-            select(db.FindingRow).where(db.FindingRow.snapshot_id == snapshot.id)
-        ).all(),
-        facts=db_session.scalars(
-            select(db.FactRow)
-            .where(db.FactRow.record_id == record.id)
-            .order_by(db.FactRow.as_of)
-        ).all(),
-        documents=_documents(db_session, record.id),
-        anchor=db_session.scalar(
-            select(db.Anchor).where(db.Anchor.snapshot_id == snapshot.id)
-        ),
+        **inputs,
         watermark={
             "viewer": invite.viewer_email,
             "at": datetime.now(timezone.utc).isoformat(),
@@ -410,6 +561,7 @@ def view(token: str, request: Request, db_session: SessionDep) -> dict[str, Any]
         },
     )
     payload["state"] = "open"
+    payload["viewer_email"] = invite.viewer_email
     return payload
 
 
