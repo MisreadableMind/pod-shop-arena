@@ -1,0 +1,76 @@
+# Render blueprint. One web service, one Postgres, one disk for evidence blobs.
+#
+# Deploy: push this repo, then New → Blueprint on Render and point it here.
+# Everything below except the two chain secrets is set automatically.
+
+services:
+  - type: web
+    name: podarena
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter # a disk needs a paid instance; see PODARENA_S3_BUCKET below
+    healthCheckPath: /api/health
+    autoDeploy: true
+
+    disk:
+      # Raw documents are write-once and content-addressed. They must survive a
+      # redeploy or the DKIM proofs go with them.
+      name: evidence
+      mountPath: /data
+      sizeGB: 1
+
+    envVars:
+      - key: PODARENA_DATABASE_URL
+        fromDatabase:
+          name: podarena-db
+          property: connectionString
+
+      - key: PODARENA_PUBLIC_BASE_URL
+        fromService:
+          type: web
+          name: podarena
+          property: host
+
+      # Runs the synthetic fixture corpus and stages the demo records.
+      # Turn both off before this instance ever holds a real track record:
+      # demo mode adds a fake broker domain to the DKIM allow-list.
+      - key: PODARENA_DEMO_FIXTURES
+        value: "true"
+      - key: PODARENA_SEED_DEMO
+        value: "true"
+
+      # Monad Testnet, per docs.monad.xyz/developer-essentials.
+      - key: PODARENA_CHAIN_ID
+        value: "10143"
+      - key: PODARENA_RPC_URL
+        value: https://testnet-rpc.monad.xyz
+      - key: PODARENA_EXPLORER_URL
+        value: https://testnet.monadvision.com
+
+      # Set these two in the dashboard after deploying the contract.
+      # Without them the app still computes and stores roots; it just marks
+      # them unanchored rather than pretending otherwise.
+      - key: PODARENA_REGISTRY_ADDRESS
+        sync: false
+      - key: PODARENA_ANCHOR_PRIVATE_KEY
+        sync: false
+
+      # Guards the ingest and invite routes. Required once demo mode is off.
+      - key: PODARENA_ADMIN_TOKEN
+        generateValue: true
+
+      # Prefer object storage to a disk? Set these and drop the disk block.
+      # - key: PODARENA_S3_BUCKET
+      #   sync: false
+      # - key: PODARENA_S3_ENDPOINT_URL
+      #   sync: false
+      # - key: PODARENA_AWS_ACCESS_KEY_ID
+      #   sync: false
+      # - key: PODARENA_AWS_SECRET_ACCESS_KEY
+      #   sync: false
+
+databases:
+  - name: podarena-db
+    plan: free
+    databaseName: podarena
+    user: podarena

@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pod Arena · Platform Overview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --onyx:#0c1018; --umber:#1e1310; --slate:#6d7074; --ash:#9e9fa3;
+    --canvas:#ffffff; --card:#f5f5f5; --inset:#fbfbfc;
+    --hairline:rgba(158,159,163,.35); --hairline-soft:rgba(158,159,163,.22);
+    --dawn:linear-gradient(180deg,rgb(40,14,1) 0%,rgb(24,38,68) 15.26%,rgb(90,118,159) 30.28%,rgb(135,161,196) 43.38%,rgb(193,211,230) 58.83%,rgb(254,249,225) 79.71%,rgb(247,243,240) 100%);
+    --dawn-h:linear-gradient(100deg,rgb(30,19,16) 0%,rgb(24,38,68) 16%,rgb(90,118,159) 34%,rgb(135,161,196) 50%,rgb(193,211,230) 66%,rgb(254,249,225) 86%,rgb(247,243,240) 100%);
+    --font-display:'Fraunces','Playfair Display',Georgia,serif;
+    --font-sans:'Hanken Grotesk',ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+    --font-mono:ui-monospace,'SF Mono','JetBrains Mono',Menlo,monospace;
+    --r:16px; --pill:50px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:#e9e9ec; color:var(--onyx);
+    font-family:var(--font-sans); font-size:14px; line-height:1.45; letter-spacing:-.01em;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  }
+  .deck{display:flex; flex-direction:column; align-items:center; gap:26px; padding:28px 0}
+
+  /* --- slide canvas: 1280 x 720 --- */
+  .slide{
+    position:relative; width:1280px; height:720px; flex:0 0 auto; overflow:hidden;
+    background:var(--canvas); color:var(--onyx);
+    padding:60px 72px 56px; display:flex; flex-direction:column;
+    box-shadow:0 14px 46px rgba(12,16,24,.14);
+  }
+  .slide.dark{ background:var(--umber); color:#fff }
+  .slide.dark .eyebrow{ color:rgba(255,255,255,.62) }
+
+  /* type */
+  .display{font-family:var(--font-display); font-weight:400; line-height:1.02; letter-spacing:-.025em; font-optical-sizing:auto}
+  .eyebrow{font-family:var(--font-mono); font-size:12px; letter-spacing:.18em; text-transform:uppercase; color:var(--slate)}
+  .stitle{font-family:var(--font-display); font-weight:400; font-size:44px; line-height:1.03; letter-spacing:-.025em; margin:12px 0 0}
+  .lead{font-size:18px; line-height:1.5; color:var(--slate); font-weight:400; max-width:64ch}
+  .dim{color:var(--slate)} .faint{color:var(--ash)}
+  .mono{font-family:var(--font-mono)}
+  .num{font-variant-numeric:tabular-nums}
+  b,strong{font-weight:600}
+  .sub{color:var(--slate); font-size:15px}
+
+  .head{margin-bottom:24px}
+  .body{flex:1; min-height:0}
+
+  /* footer */
+  .foot{position:absolute; left:72px; right:72px; bottom:26px; display:flex; justify-content:space-between; align-items:center;
+        font-family:var(--font-mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--ash)}
+  .slide.dark .foot{color:rgba(255,255,255,.5)}
+  .foot .brandmark{display:flex; gap:9px; align-items:center}
+  .dotmark{width:15px; height:15px; border-radius:5px; background:var(--dawn-h); display:inline-block; transform:rotate(45deg)}
+
+  /* pills / badges */
+  .pill{display:inline-flex; align-items:center; gap:6px; padding:4px 12px; border-radius:var(--pill); border:1px solid var(--hairline);
+        font-family:var(--font-mono); font-size:11px; letter-spacing:.02em; color:var(--slate); background:var(--inset)}
+  .badge{display:inline-flex; align-items:center; gap:6px; padding:4px 11px; border-radius:var(--pill); font-size:12px; font-weight:500}
+  .b-live{background:var(--onyx); color:#fff}
+  .b-zk{background:transparent; color:var(--onyx); border:1px solid var(--onyx)}
+  .b-att{background:transparent; color:var(--slate); border:1px dashed var(--hairline)}
+  .b-doc{background:var(--card); color:var(--slate); border:1px solid var(--hairline)}
+  .b-unv{background:var(--card); color:var(--ash); border:1px solid var(--hairline-soft)}
+  .dot{width:7px; height:7px; border-radius:50%; background:currentColor; display:inline-block}
+
+  /* cards / grids */
+  .card{background:var(--card); border:1px solid var(--hairline-soft); border-radius:var(--r); padding:18px 20px}
+  .card h4{margin:0; font-size:15.5px; font-weight:600}
+  .card p{margin:7px 0 0; color:var(--slate); font-size:13px; line-height:1.5}
+  .grid{display:grid; gap:15px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  .kicker{font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--ash); margin-bottom:9px}
+
+  /* browser frame for screenshots */
+  .frame{border:1px solid var(--hairline); border-radius:12px; overflow:hidden; background:#fff; box-shadow:0 8px 26px rgba(12,16,24,.12)}
+  .frame .bar{display:flex; align-items:center; gap:7px; padding:9px 14px; background:var(--inset); border-bottom:1px solid var(--hairline-soft)}
+  .frame .bar i{width:9px; height:9px; border-radius:50%; background:var(--hairline); display:inline-block}
+  .frame .url{margin-left:12px; font-family:var(--font-mono); font-size:11px; color:var(--ash); letter-spacing:.02em}
+  .frame img{display:block; width:100%; height:auto}
+  .frame .clip{overflow:hidden}
+
+  /* callouts */
+  .callout{display:flex; gap:13px; align-items:flex-start}
+  .callout .n{flex:0 0 auto; width:26px; height:26px; border-radius:50%; border:1px solid var(--onyx); display:flex; align-items:center; justify-content:center;
+              font-family:var(--font-mono); font-size:12px; font-weight:600; margin-top:1px}
+  .callout .t{font-size:14px} .callout .t b{font-weight:600} .callout .t span{color:var(--slate)}
+  .stack{display:flex; flex-direction:column}
+
+  /* pipeline */
+  .pipe{display:flex; align-items:stretch; gap:0}
+  .pipe .step{flex:1; background:var(--card); border:1px solid var(--hairline-soft); border-radius:14px; padding:15px 14px; position:relative}
+  .pipe .step .s-n{font-family:var(--font-mono); font-size:11px; color:var(--ash); letter-spacing:.1em}
+  .pipe .step h5{margin:8px 0 5px; font-size:14px; font-weight:600}
+  .pipe .step p{margin:0; font-size:11.5px; color:var(--slate); line-height:1.45}
+  .pipe .arrow{flex:0 0 28px; display:flex; align-items:center; justify-content:center; color:var(--ash); font-size:19px}
+
+  .rowwrap{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+  .tag{font-family:var(--font-mono); font-size:11.5px; color:var(--slate); background:var(--inset); border:1px solid var(--hairline-soft); border-radius:8px; padding:5px 10px}
+  .hr{height:1px; background:var(--hairline-soft); border:0; margin:0}
+  .whostrip{display:flex; gap:22px; flex-wrap:wrap; align-items:center; font-size:13px; color:var(--slate)}
+  .whostrip b{color:var(--onyx); font-weight:600}
+
+  /* why-monad comparison */
+  .cmp{width:100%; border-collapse:collapse}
+  .cmp th{text-align:left; font-family:var(--font-mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase;
+          color:var(--ash); font-weight:400; padding:0 18px 9px 0; border-bottom:1px solid var(--hairline)}
+  .cmp th:last-child{color:var(--onyx); padding-right:0}
+  .cmp td{padding:11px 18px 11px 0; border-bottom:1px solid var(--hairline-soft); vertical-align:baseline}
+  .cmp tr:last-child td{border-bottom:0}
+  .cmp td:first-child{color:var(--slate); font-size:13px}
+  .cmp td:nth-child(2){color:var(--slate); font-family:var(--font-mono); font-size:13px; font-variant-numeric:tabular-nums}
+  .cmp td:last-child{color:var(--onyx); font-family:var(--font-mono); font-size:13px; font-weight:600;
+                     font-variant-numeric:tabular-nums; padding-right:0}
+  .deploy{display:flex; gap:9px; flex-wrap:wrap; align-items:center}
+
+  /* cover */
+  .cover-title{font-size:96px; line-height:.98}
+
+  @media print{
+    body{background:#fff}
+    .deck{gap:0; padding:0}
+    .slide{box-shadow:none; margin:0; break-after:page; page-break-after:always}
+    .slide:last-child{break-after:auto; page-break-after:auto}
+    .frame{box-shadow:none}
+    *{-webkit-print-color-adjust:exact; print-color-adjust:exact}
+  }
+  @page{ size:1280px 720px; margin:0 }
+</style>
+</head>
+<body>
+<div class="deck">
+
+  <!-- 1 · COVER -->
+  <section class="slide dark" style="background:var(--dawn); padding:0">
+    <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(12,10,8,.34) 0%, rgba(12,10,8,0) 32%, rgba(247,243,240,0) 70%, rgba(247,243,240,.55) 100%)"></div>
+    <div style="position:relative; padding:60px 72px 56px; height:100%; display:flex; flex-direction:column; color:#0c1018">
+      <div class="rowwrap" style="justify-content:space-between; color:#f4efe6">
+        <div class="brandmark" style="display:flex; gap:12px; align-items:center; font-family:var(--font-sans); font-weight:600; letter-spacing:.1em; font-size:15px">
+          <span class="dotmark" style="width:24px;height:24px;border-radius:7px"></span> POD ARENA
+        </div>
+        <div class="mono" style="font-size:11px; letter-spacing:.16em; text-transform:uppercase; opacity:.8">Invite-only · Confidential</div>
+      </div>
+
+      <div style="flex:1; display:flex; flex-direction:column; justify-content:center">
+        <div class="mono" style="font-size:13px; letter-spacing:.2em; text-transform:uppercase; color:#f4efe6; opacity:.9">Verified, private track records</div>
+        <h1 class="display cover-title" style="margin:16px 0 0; color:#fff">Proof over<br/>PDFs.</h1>
+        <p class="lead" style="color:rgba(255,255,255,.9); font-size:21px; max-width:58ch; margin-top:26px">
+          The platform where portfolio managers and funds prove real performance. Every number comes
+          from read-only source data, gets time-stamped so it cannot be quietly edited, and is shared
+          only with the people they invite.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 · THE PROBLEM -->
+  <section class="slide">
+    <div class="head">
+      <div class="eyebrow">The problem</div>
+      <h2 class="stitle">Track records are self-reported PDFs.</h2>
+    </div>
+    <div class="body grid g2" style="align-content:start; gap:40px">
+      <div class="stack" style="gap:20px; justify-content:center">
+        <p style="font-size:22px; line-height:1.5; margin:0">
+          They are cherry-picked, backfilled, and impossible for an outsider to check. Proving your
+          edge today means mailing strangers your brokerage statements, or asking them to trust a deck.
+        </p>
+        <p class="lead" style="margin:0">
+          An allocator cannot tell a real 22% from a flattering one. A manager cannot prove theirs
+          without handing over the positions that are the whole edge. The document is the weakest
+          link in the market.
+        </p>
+      </div>
+      <div class="stack" style="gap:14px; justify-content:center">
+        <div class="card"><h4>Cherry-picked windows</h4><p>Start and end dates chosen after the fact to flatter the curve.</p></div>
+        <div class="card"><h4>Backfilled and hand-typed</h4><p>The numbers are entered by the person they flatter, with nothing tying them to source.</p></div>
+        <div class="card"><h4>Positions exposed to prove it</h4><p>The only proof on offer is handing over the very holdings that are the edge.</p></div>
+      </div>
+    </div>
+    <div class="foot"><span class="brandmark"><span class="dotmark"></span> Pod Arena · Confidential</span><span>02</span></div>
+  </section>
+
+  <!-- 3 · WHAT IT IS / PRINCIPLES -->
+  <section class="slide">
+    <div class="head">
+      <div class="eyebrow">What Pod Arena is</div>
+      <h2 class="stitle">Performance you never have to take on faith.</h2>
+      <p class="lead" style="margin-top:12px">Six principles hold the product together. Each one is enforced by code, not by a promise.</p>
+    </div>
+    <div class="body grid g3" style="gap:15px; align-content:start">
+      <div class="card"><h4>Source of truth only</h4><p>Every metric comes from read-only institutional data. Nobody types in a performance number, ever.</p></div>
+      <div class="card"><h4>No made-up metrics</h4><p>One methodology, aligned with GIPS. The same inputs always produce the same numbers, so anyone can reproduce them.</p></div>
+      <div class="card"><h4>Exclusivity fence</h4><p>Nothing is public. Access is by invitation, scoped to the least a viewer needs, and can be revoked or set to expire.</p></div>
+      <div class="card"><h4>Read-only, never custody</h4><p>We read; we never hold. The connector exposes one verb, <span class="mono">pull()</span>. There is no button that could trade or withdraw.</p></div>
+      <div class="card"><h4>Verifiable, not asserted</h4><p>Snapshot hashes are anchored on Monad. The viewer re-runs the check in their own browser instead of trusting ours.</p></div>
+      <div class="card"><h4>Compliance from day one</h4><p>KYC and KYB, accredited-investor gating, and an SEC Marketing-Rule posture are part of the design.</p></div>
+    </div>
+    <div class="foot"><span class="brandmark"><span class="dotmark"></span> Pod Arena · Confidential</span><span>03</span></div>
+  </section>
+
+  <!-- 4 · HOW IT WORKS + WHO IT'S FOR -->
+  <section class="slide">
+    <div class="head">
+      <div class="eyebrow">How it works</div>
+      <h2 class="stitle">From a live account to a proof.</h2>
+      <p class="lead" style="margin-top:12px">The riskiest part is already built and runs start to finish. Every number traces back to a hashed snapshot.</p>
+    </div>
+    <div class="body" style="display:flex; flex-direction:column; justify-content:center; gap:26px">
+      <div class="pipe">
+        <div class="step"><div class="s-n">01</div><h5>Connect</h5><p>Read-only link to a broker, Plaid, or a fund-admin feed. Nothing can trade or withdraw.</p></div>
+        <div class="arrow">→</div>
+        <div class="step"><div class="s-n">02</div><h5>Snapshot &amp; hash</h5><p>The raw pull is written once to a content-addressed vault. <span class="mono">&lt;sha256&gt;.json</span></p></div>
+        <div class="arrow">→</div>
+        <div class="step"><div class="s-n">03</div><h5>Compute</h5><p>A deterministic engine derives TWR, IRR, Sharpe, Sortino, Calmar, and VaR.</p></div>
+        <div class="arrow">→</div>
+        <div class="step"><div class="s-n">04</div><h5>Anchor</h5><p>Every pull's Merkle root is written to Monad. Only the root is published; raw data stays in the vault.</p></div>
+        <div class="arrow">→</div>
+        <div class="step"><div class="s-n">05</div><h5>Share</h5><p>Behind the fence: invited viewers, scoped disclosure, an NDA, a watermark, and a full log.</p></div>
+      </div>
+      <div class="whostrip">
+        <span class="kicker" style="margin:0">Built for</span>
+        <span><b>Emerging PMs</b> proving a record</span><span class="faint">·</span>
+        <span><b>Funds</b> raising the next fund</span><span class="faint">·</span>
+        <span><b>Allocators &amp; LPs</b> running diligence</span><span class="faint">·</span>
+        <span><b>Employers</b> vetting a PM's book</span>
+      </div>
+    </div>
+    <div class="foot"><span class="brandmark"><span class="dotmark"></span> Pod Arena · Confidential</span><span>04</span></div>
+  </section>
+
+  <!-- 5 · WHY MONAD -->
+  <section class="slide">
+    <div class="head">
+      <div class="eyebrow">Why this needs Monad</div>
+      <h2 class="stitle">Daily anchoring is a workaround.</h2>
+      <p class="lead" style="margin-top:12px">Every provenance system on a slow chain batches, because blocks are slow and blockspace is dear. Batch once a night and you have proved the day, not the moment. So we stopped batching.</p>
+    </div>
+    <div class="body" style="display:flex; flex-direction:column; gap:24px">
+      <div class="grid" style="grid-template-columns:1.08fr 0.92fr; gap:44px; align-items:center; flex:1; min-height:0">
+        <div class="stack" style="gap:17px">
+          <div class="callout"><div class="n">1</div><div class="t"><b>Anchor every pull, not every night.</b> <span>Three-tenths-of-a-second blocks and 600 ms finality put the root on-chain before the sync has finished. The window an editor could work in drops from twenty-four hours to under a second.</span></div></div>
+          <div class="callout"><div class="n">2</div><div class="t"><b>The audit log <i>is</i> the chain.</b> <span>Every view behind the fence is its own transaction: who opened the record, when, under which disclosure profile. Append-only because it is a block, not because we promised.</span></div></div>
+          <div class="callout"><div class="n">3</div><div class="t"><b>The viewer checks it without us.</b> <span>They read the root straight off Monad and re-fold the proof locally. Our API is never in the trust path, and verifying costs them nothing.</span></div></div>
+        </div>
+        <div>
+          <table class="cmp">
+            <thead><tr><th></th><th>Ethereum L1</th><th>Monad</th></tr></thead>
+            <tbody>
+              <tr><td>Block time</td><td>12 s</td><td>0.3 s</td></tr>
+              <tr><td>Finality</td><td>~13 min</td><td>0.6 s</td></tr>
+              <tr><td>Throughput</td><td>5M gas/s</td><td>500M gas/s</td></tr>
+              <tr><td>So you anchor</td><td>nightly, in a batch</td><td>every pull, every view</td></tr>
+            </tbody>
+          </table>
+          <p class="sub" style="margin-top:17px; max-width:44ch">That last row is the product. Per-view anchoring at twelve-second blocks would cost more than the subscription and settle after the meeting had ended.</p>
+        </div>
+      </div>
+      <div class="deploy">
+        <span class="pill">Monad Testnet</span>
+        <span class="pill">TrackRecordRegistry · {{CONTRACT_ADDRESS}}</span>
+        <span class="pill">live · {{LIVE_URL}}</span>
+      </div>
+    </div>
+    <div class="foot"><span class="brandmark"><span class="dotmark"></span> Pod Arena · Confidential</span><span>05</span></div>
+  </section>
+
+  <!-- 6 · UX FLOW -->
+  <section class="slide">
+    <div class="head">
+      <div class="eyebrow">The UX flow</div>
+      <h2 class="stitle">Two sides of the fence, one verified truth.</h2>
+    </div>
+    <div class="body" style="display:flex; flex-direction:column; justify-content:center; gap:24px">
+      <div>
+        <div class="kicker" style="margin-bottom:12px">Manager or fund, the owner</div>
+        <div class="pipe">
+          <div class="step"><h5>Sign in</h5><p>An invite-only account: PM, fund, or allocator.</p></div>
+          <div class="arrow">→</div>
+          <div class="step"><h5>Connect a source</h5><p>Read-only. It pulls about 18 months of data.</p></div>
+          <div class="arrow">→</div>
+          <div class="step"><h5>Verified record</h5><p>Metrics, curve, methodology, on-chain proof.</p></div>
+          <div class="arrow">→</div>
+          <div class="step"><h5>Invite behind the fence</h5><p>Pick a disclosure profile and an expiry.</p></div>
+        </div>
+      </div>
+      <div>
+        <div class="kicker" style="margin-bottom:12px">Allocator or LP, the viewer</div>
+        <div class="pipe">
+          <div class="step"><h5>Open the secure link</h5><p>An identity-bound invite, not a public URL.</p></div>
+          <div class="arrow">→</div>
+          <div class="step"><h5>Accept the NDA</h5><p>Consent is recorded to the audit trail.</p></div>
+          <div class="arrow">→</div>
+          <div class="step"><h5>Watermarked view</h5><p>Only what the owner permitted, stamped with viewer identity.</p></div>
+          <div class="arrow">→</div>
+          <div class="step"><h5>Verify it yourself</h5><p>Re-fold the Merkle proof in your own browser.</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="foot"><span class="brandmark"><span class="dotmark"></span> Pod Arena · Confidential</span><span>06</span></div>
+  </section>
+
+  <!-- 7 · DASHBOARDS -->
+  <section class="slide">
+    <div class="head"><div class="eyebrow">Screens · The owner's home</div><h2 class="stitle">A record that computes itself.</h2>
+      <p class="lead" style="margin-top:10px">From a solo book to a multi-strategy shop, every record is verified the same way.</p></div>
+    <div class="body grid g2" style="gap:30px; align-items:start">
+      <div class="stack" style="gap:12px; align-items:center">
+        <div class="frame" style="max-width:100%"><div class="bar"><i></i><i></i><i></i><span class="url">podarena.app/</span></div><div class="clip" style="max-height:330px; overflow:hidden"><img src="screenshots/02-owner-dashboard-pm.png" alt="Portfolio manager dashboard" /></div></div>
+        <p class="sub" style="text-align:center; margin:0"><b style="color:var(--onyx)">A solo manager.</b> Metrics pulled from source, tagged Live-Connected.</p>
+      </div>
+      <div class="stack" style="gap:12px; align-items:center">
+        <div class="frame" style="max-width:100%"><div class="bar"><i></i><i></i><i></i><span class="url">podarena.app/ · Meridian Capital</span></div><div class="clip" style="max-height:330px; overflow:hidden"><img src="screenshots/03-fund-dashboard.png" alt="Fund dashboard with four funds" /></div></div>
+        <p class="sub" style="text-align:center; margin:0"><b style="color:var(--onyx)">A multi-strat GP.</b> Each fund is its own verified record.</p>
+      </div>
+    </div>
+    <div class="foot"><span class="brandmark"><span class="dotmark"></span> Pod Arena · Confidential</span><span>07</span></div>
+  </section>
+
+  <!-- 8 · ANATOMY OF A RECORD -->
+  <section class="slide">
+    <div class="head"><div class="eyebrow">Screen · The verified record</div><h2 class="stitle">One long, verifiable page.</h2></div>
+    <div class="body grid" style="grid-template-columns:0.72fr 1.28fr; gap:40px; align-items:center">
+      <div class="frame" style="max-height:470px; overflow:hidden"><div class="bar"><i></i><i></i><i></i><span class="url">podarena.app/records/…</span></div><div class="clip" style="max-height:432px; overflow:hidden"><img src="screenshots/04-record-full.png" alt="Full verified record page" /></div></div>
+      <div class="stack" style="gap:15px">
+        <div class="callout"><div class="n">1</div><div class="t"><b>Source attestation strip.</b> <span>Institution, read-only access method, last sync, period, and methodology version, all in one line.</span></div></div>
+        <div class="callout"><div class="n">2</div><div class="t"><b>Verified performance.</b> <span>Net and gross shown side by side, which the Marketing Rule requires.</span></div></div>
+        <div class="callout"><div class="n">3</div><div class="t"><b>Equity curve.</b> <span>The same linked-TWR series the engine produced, so the picture cannot drift from the numbers.</span></div></div>
+        <div class="callout"><div class="n">4</div><div class="t"><b>Methodology and all metrics.</b> <span>Every value shows the formula behind it and the inputs that fed it.</span></div></div>
+        <div class="callout"><div class="n">5</div><div class="t"><b>Verification, fence, and audit.</b> <span>Proof, sharing controls, and the full access log all live on the page.</span></div></div>
+      </div>
+    </div>
+    <div class="foot"><span class="brandmark"><span class="dotmark"></span> Pod Arena · Confidential</span><span>08</span></div>
+  </section>
+
+  <!-- 9 · VERIFICATION + TRUST TIERS -->
+  <section class="slide">
+    <div class="head"><div class="eyebrow">Verification · the moat</div><h2 class="stitle">Proof you check yourself.</h2></div>
+    <div class="body grid" style="grid-template-columns:0.85fr 1.15fr; gap:36px; align-items:center">
+      <div class="frame" style="max-width:420px"><div class="clip"><img src="screenshots/06-verification-verified.png" alt="On-chain verification panel, verified locally" /></div></div>
+      <div class="stack" style="gap:14px">
+        <div class="callout"><div class="n">1</div><div class="t"><b>Hashed, then anchored.</b> <span>Each snapshot is hashed and its root written to Monad on the same pull — a timestamp nobody can backdate.</span></div></div>
+        <div class="callout"><div class="n">2</div><div class="t"><b>The proof reveals nothing.</b> <span>Only the root is published, so positions never leave the vault.</span></div></div>
+        <div class="callout"><div class="n">3</div><div class="t"><b>Recomputed in the browser.</b> <span>The viewer's browser rebuilds the root from the proof and compares. When it matches, it reads <span class="mono">Verified locally</span>.</span></div></div>
+        <div class="hr" style="margin:4px 0"></div>
+        <div class="sub" style="margin:0">Every metric is tagged by how strong its source is:</div>
+        <div class="rowwrap" style="gap:8px">
+          <span class="badge b-live"><span class="dot"></span>live_connected</span>
+          <span class="faint">›</span>
+          <span class="badge b-zk">zk_proven</span>
+          <span class="faint">›</span>
+          <span class="badge b-att">third_party_attested</span>
+          <span class="faint">›</span>
+          <span class="badge b-doc">document_ingested</span>
+          <span class="faint">›</span>
+          <span class="badge b-unv">unverified</span>
+        </div>
+        <p class="sub" style="margin:2px 0 0; max-width:56ch">Next on this axis: zero-knowledge proofs, already modeled as the <span class="mono">zk_proven</span> tier, so a manager can prove a 22% return without showing a single position.</p>
+      </div>
+    </div>
+    <div class="foot"><span class="brandmark"><span class="dotmark"></span> Pod Arena · Confidential</span><span>09</span></div>
+  </section>
+
+  <!-- 10 · THE FENCE -->
+  <section class="slide">
+    <div class="head"><div class="eyebrow">The exclusivity fence</div><h2 class="stitle">You decide who sees what.</h2></div>
+    <div class="body grid g2" style="gap:34px; align-items:start">
+      <div class="stack" style="gap:11px; align-items:center">
+        <div class="frame" style="max-width:100%"><div class="bar"><i></i><i></i><i></i><span class="url">records/… · share</span></div><div class="clip" style="max-height:300px; overflow:hidden"><img src="screenshots/07-share-fence.png" alt="Exclusivity fence share panel" /></div></div>
+        <p class="sub" style="text-align:center; margin:0"><b style="color:var(--onyx)">The owner sets the terms.</b> Named viewer, disclosure profile, expiry.</p>
+      </div>
+      <div class="stack" style="gap:11px; align-items:center">
+        <div class="frame" style="max-width:100%"><div class="bar"><i></i><i></i><i></i><span class="url">shared/… · NDA gate</span></div><div class="clip" style="max-height:300px; overflow:hidden"><img src="screenshots/08-shared-nda-gate.png" alt="NDA gate the viewer sees first" /></div></div>
+        <p class="sub" style="text-align:center; margin:0"><b style="color:var(--onyx)">The viewer signs first.</b> Nothing renders until the NDA is accepted, and the consent is logged.</p>
+      </div>
+    </div>
+    <div class="rowwrap" style="justify-content:center; gap:8px; margin-top:14px">
+      <span class="pill">summary</span><span class="pill">ratios &amp; risk</span><span class="pill">full detail</span><span class="pill">full + positions</span>
+      <span class="sub" style="margin-left:8px">reveal dollar amounts, or keep it to weights. Revoke anytime.</span>
+    </div>
+    <div class="foot"><span class="brandmark"><span class="dotmark"></span> Pod Arena · Confidential</span><span>10</span></div>
+  </section>
+
+  <!-- 11 · WHAT THE ALLOCATOR SEES -->
+  <section class="slide">
+    <div class="head"><div class="eyebrow">Screen · Behind the fence</div><h2 class="stitle">What the allocator actually sees.</h2></div>
+    <div class="body grid" style="grid-template-columns:1.4fr 1fr; gap:34px; align-items:center">
+      <div class="frame" style="max-height:472px"><div class="bar"><i></i><i></i><i></i><span class="url">podarena.app/shared/… · Dana Whitfield</span></div><div class="clip" style="max-height:432px; overflow:hidden"><img src="screenshots/09-shared-view-watermarked.png" alt="Watermarked shared record view with positions" /></div></div>
+      <div class="stack" style="gap:16px">
+        <div class="callout"><div class="n">1</div><div class="t"><b>Watermarked to the viewer.</b> <span>Their name, email, and the time are tiled across every screen, so any leak is traceable.</span></div></div>
+        <div class="callout"><div class="n">2</div><div class="t"><b>Only what was permitted.</b> <span>This profile reveals positions with market value. Another viewer would get ratios and nothing more.</span></div></div>
+        <div class="callout"><div class="n">3</div><div class="t"><b>Verified from their side too.</b> <span>The allocator runs the same proof and gets <span class="mono">Verified locally</span>.</span></div></div>
+        <div class="callout"><div class="n">4</div><div class="t"><b>The view is logged.</b> <span>The page says so, and it means it: the view lands in the owner's append-only audit trail.</span></div></div>
+      </div>
+    </div>
+    <div class="foot"><span class="brandmark"><span class="dotmark"></span> Pod Arena · Confidential</span><span>11</span></div>
+  </section>
+
+  <!-- 12 · STATUS + NEXT -->
+  <!-- ⚠ TRUE THIS UP BEFORE SUBMITTING. The left column is a claim about code that is
+       in the repo and deployed. Anything that did not land by 5:45 moves to the right. -->
+  <section class="slide">
+    <div class="head"><div class="eyebrow">Status · built at Monad Blitz London</div><h2 class="stitle">What is real, and what is scaffolding.</h2>
+      <p class="lead" style="margin-top:12px">One day of building. The pipeline runs end to end and anchors to Monad Testnet. Everything still stubbed sits behind a stable interface, so the real thing drops in without a caller noticing.</p></div>
+    <div class="body grid g2" style="gap:30px; align-content:start">
+      <div class="card" style="background:var(--inset)">
+        <div class="kicker">Built today, running live</div>
+        <div class="stack" style="gap:9px; margin-top:4px">
+          <div class="callout"><div class="n">✓</div><div class="t">Read-only pull into an immutable, content-addressed snapshot vault</div></div>
+          <div class="callout"><div class="n">✓</div><div class="t">A deterministic metrics engine on a versioned methodology, determinism unit-tested</div></div>
+          <div class="callout"><div class="n">✓</div><div class="t"><span class="mono">TrackRecordRegistry</span> on Monad Testnet — every snapshot root anchored on the pull</div></div>
+          <div class="callout"><div class="n">✓</div><div class="t">In-browser proof: the viewer re-folds the Merkle path against the on-chain root</div></div>
+          <div class="callout"><div class="n">✓</div><div class="t">The fence: NDA gate, scoped disclosure, watermark, and an on-chain view log</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="kicker">Stubbed on purpose, and where it goes</div>
+        <div class="stack" style="gap:9px; margin-top:4px">
+          <div class="callout"><div class="n" style="border-color:var(--ash); color:var(--ash)">→</div><div class="t"><span>The connector is a seeded, deterministic mock. Real Plaid, IBKR Flex, and fund-admin SFTP feeds drop in behind the same <span class="mono">pull()</span>.</span></div></div>
+          <div class="callout"><div class="n" style="border-color:var(--ash); color:var(--ash)">→</div><div class="t"><span>Zero-knowledge proofs, already modeled as the <span class="mono">zk_proven</span> tier. No circuit yet.</span></div></div>
+          <div class="callout"><div class="n" style="border-color:var(--ash); color:var(--ash)">→</div><div class="t"><span>Identity and security: KYC/KYB, passkeys and MFA, encryption at rest.</span></div></div>
+          <div class="callout"><div class="n" style="border-color:var(--ash); color:var(--ash)">→</div><div class="t"><span>GIPS composites, attribution, and the third-party attestor role.</span></div></div>
+          <div class="callout"><div class="n" style="border-color:var(--ash); color:var(--ash)">→</div><div class="t"><span>The demand side: allocator discovery, data rooms, and the arena where managers compete for capital.</span></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="foot"><span class="brandmark"><span class="dotmark"></span> Pod Arena · Confidential</span><span>12</span></div>
+  </section>
+
+  <!-- 13 · CLOSING -->
+  <section class="slide dark" style="background:var(--umber)">
+    <div style="position:absolute; inset:0; background:radial-gradient(75% 300% at 108% 150%, rgba(237,148,84,.28) 0%, rgba(153,161,175,.05) 60%)"></div>
+    <div style="position:relative; flex:1; display:flex; flex-direction:column; justify-content:center">
+      <div class="mono" style="font-size:12px; letter-spacing:.2em; text-transform:uppercase; color:rgba(255,255,255,.6)">Pod Arena</div>
+      <h2 class="display" style="font-size:82px; color:#fff; margin:14px 0 0">Claims fade.<br/>Proof lasts.</h2>
+      <p class="lead" style="color:rgba(255,255,255,.82); font-size:19px; max-width:54ch; margin-top:26px">
+        A number a skeptic can check to the basis point, while the manager's positions stay theirs.
+        That is the whole product.
+      </p>
+    </div>
+    <div style="position:relative; display:flex; justify-content:flex-end; align-items:flex-end">
+      <div class="brandmark" style="display:flex; gap:11px; align-items:center; color:#fff; font-family:var(--font-sans); font-weight:600; letter-spacing:.1em; font-size:14px">
+        <span class="dotmark" style="width:22px;height:22px;border-radius:7px"></span> POD ARENA
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>
