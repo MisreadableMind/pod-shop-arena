@@ -19,6 +19,10 @@ from adapters import db
 
 
 def main() -> None:
+    # Printed before the connection is opened, because the failure this most
+    # often hits is "the URL is not the one you think it is" and a stack trace
+    # from the driver never says which URL it tried.
+    print(f"  database: {db.database_url().render_as_string(hide_password=True)}")
     engine = db.engine()
     db.Base.metadata.create_all(engine)
 

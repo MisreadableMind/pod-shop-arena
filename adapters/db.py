@@ -16,6 +16,7 @@ from __future__ import annotations
 import uuid
 from datetime import date, datetime, timezone
 from decimal import Decimal
+from pathlib import Path
 
 from sqlalchemy import (
     BigInteger,
@@ -34,6 +35,7 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.engine import make_url
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, sessionmaker
 
 from adapters.config import settings
@@ -345,13 +347,27 @@ _engine = None
 _Session = None
 
 
+def database_url():
+    """The configured URL, password removed, safe to print in a boot log."""
+    return make_url(settings().database_url)
+
+
 def engine():
     global _engine
     if _engine is None:
-        url = settings().database_url
+        url = database_url()
         kwargs = {"pool_pre_ping": True, "future": True}
-        if url.startswith("sqlite"):
+        if url.drivername.startswith("sqlite"):
             kwargs["connect_args"] = {"check_same_thread": False}
+            # SQLite will not create a missing directory. It says "unable to
+            # open database file" and leaves you to guess which file it meant —
+            # which is exactly what a relative URL copied from a laptop does in
+            # a container, where the working directory is /app and there is no
+            # /app/var. Create the directory and let the path be the answer.
+            if url.database and url.database != ":memory:":
+                Path(url.database).expanduser().resolve().parent.mkdir(
+                    parents=True, exist_ok=True
+                )
         _engine = create_engine(url, **kwargs)
     return _engine
 
