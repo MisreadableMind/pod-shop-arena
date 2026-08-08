@@ -55,7 +55,12 @@ services:
       - key: PODARENA_ANCHOR_PRIVATE_KEY
         sync: false
 
-      # Guards the ingest and invite routes. Required once demo mode is off.
+      # Guards the ingest and invite routes, and opens the manager console.
+      # Required once demo mode is off. While PODARENA_DEMO_FIXTURES is true
+      # this value is served by /api/config so the console's login screen can
+      # fill it in — deliberate, and safe only because a fixtures instance holds
+      # nothing but the synthetic corpus. Turning demo mode off stops that
+      # immediately; rotate this at the same time.
       - key: PODARENA_ADMIN_TOKEN
         generateValue: true
 

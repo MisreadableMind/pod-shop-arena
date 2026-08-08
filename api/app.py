@@ -108,6 +108,12 @@ def config() -> dict[str, Any]:
         "anchoring_enabled": cfg.anchoring_enabled,
         "demo_fixtures": cfg.demo_fixtures,
         "methodology_version": __import__("core").METHODOLOGY_VERSION,
+        # The manager console's password, handed to the browser on purpose so a
+        # three-minute demo is not three minutes of typing. It is `None` unless
+        # this instance is running the synthetic corpus, and an instance holding
+        # real evidence cannot run the synthetic corpus. Both halves of that are
+        # tested — see tests/test_owner_console.py.
+        "demo_admin_token": cfg.admin_token if cfg.demo_fixtures else None,
     }
 
 
