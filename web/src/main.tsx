@@ -56,12 +56,55 @@ function Home() {
           already signs something for you every month without thinking about it: the
           statement email sitting in your inbox. That signature is DKIM. We work from that.
         </p>
+        <div className="hero-cta">
+          <a className="cta" href={`/view/${DEMO_INVITES[0].token}`}>
+            Open the demo
+            <span aria-hidden> →</span>
+          </a>
+          <span className="cta-note">
+            A real signed track record, and a Verify button that doesn't ask our server
+            anything. Nothing to install, nothing to sign up for.
+          </span>
+        </div>
       </div>
     </section>
   );
 
   return (
     <Page hero={hero}>
+
+      {/* What we actually do, in the order it happens. Three steps because
+          there are three, not because three is a nice number for a landing
+          page. */}
+      <div className="steps">
+        <div className="step">
+          <div className="step-n">01</div>
+          <h3>Forward the statement</h3>
+          <p className="small">
+            The monthly email your broker already sent you. No API, no data feed, nobody
+            at the bank has to agree to anything or even find out.
+          </p>
+        </div>
+        <div className="step">
+          <div className="step-n">02</div>
+          <h3>We check the signature and write down the key</h3>
+          <p className="small">
+            Real RSA against the DKIM signature the bank applied. We capture the DNS key
+            as it stands right now and commit its hash on Monad — that capture is what
+            keeps the signature checkable after the bank retires the key.
+          </p>
+        </div>
+        <div className="step">
+          <div className="step-n">03</div>
+          <h3>The allocator checks it without us</h3>
+          <p className="small">
+            Their browser re-folds all 47 Merkle leaves itself and reads the root off a
+            chain we don't run, through an RPC they type in. Or they download the bundle
+            and verify it offline. If the bundle disagrees with our page, believe the
+            bundle.
+          </p>
+        </div>
+      </div>
 
       {/* Three doors, and which one you came through decides what exists. */}
       <div className="three-doors">

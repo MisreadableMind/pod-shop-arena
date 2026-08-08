@@ -50,13 +50,12 @@ the property worth having, and exactly what a backfiller needs you to give up.
 | | |
 | --- | --- |
 | **App** | *not yet deployed — `render.yaml` is a one-click blueprint, see below* |
-| **Contract** | *not yet deployed — needs a funded Monad Testnet key* |
+| **Contract** | [`0xf56b105C35d9C7c443E829A24a6cAb014f9e8353`](https://testnet.monadvision.com/address/0xf56b105C35d9C7c443E829A24a6cAb014f9e8353) — `TrackRecordRegistry`, [deploy tx](https://testnet.monadvision.com/tx/0x9289228705b4de5871eb888420a1d272d2d2b59a2a1538305df4e48a7238ff37) in block 51986893 |
 | **Chain** | Monad Testnet, id `10143`, RPC `https://testnet-rpc.monad.xyz` |
 | **Explorer** | https://testnet.monadvision.com |
 
-Both blanks need one thing each: a Render account, and a testnet key with gas from
-[faucet.monad.xyz](https://faucet.monad.xyz). Instructions are in [Deploy](#deploy) and
-take about five minutes. Everything else runs today.
+The app still needs a Render account; instructions are in [Deploy](#deploy) and take about
+five minutes. Everything else runs today.
 
 Without a contract address the app still computes and stores Merkle roots — it marks them
 unanchored rather than pretending otherwise.

@@ -260,6 +260,65 @@ code,
   color: rgba(251, 247, 240, 0.86);
 }
 
+/* One way in. The hero earns the click; everything below it is for people who
+   want to know why before they take it. */
+.hero-cta {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-top: 30px;
+}
+.cta {
+  display: inline-block;
+  background: var(--color-porcelain);
+  color: var(--color-onyx);
+  border-radius: var(--radius-pill);
+  padding: 13px 28px;
+  font-weight: 500;
+  font-size: 0.98rem;
+  text-decoration: none;
+  transition: transform var(--step), background var(--step);
+}
+.cta:hover {
+  background: #fff;
+  transform: translateX(2px);
+}
+.cta-note {
+  max-width: 40ch;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: rgba(251, 247, 240, 0.68);
+}
+
+/* How it works: three steps, because there are three. */
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.step {
+  background: var(--surface-card);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  padding: 20px 22px 22px;
+}
+.step-n {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+}
+.step h3 {
+  margin: 8px 0 8px;
+  font-size: 1.02rem;
+}
+.step p {
+  margin: 0;
+  color: var(--text-dim);
+}
+
 /* Dark footer, bookending the arc. */
 .site-footer {
   background: var(--surface-deep);
@@ -1022,7 +1081,8 @@ button.small-btn {
 
 @media (max-width: 900px) {
   .two-doors,
-  .three-doors {
+  .three-doors,
+  .steps {
     grid-template-columns: 1fr;
   }
 }
