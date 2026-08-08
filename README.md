@@ -1,4 +1,4 @@
-# Pod Arena
+# PodShop Arena
 
 **A fund manager's track record, proved with the broker's own signature and anchored on
 Monad — checkable by an allocator who does not trust us and never asks our server
@@ -73,7 +73,7 @@ So the fixture corpus signs for `ibkr-demo.podarena.test`, a domain that plainly
 exist, using an RSA keypair generated when the instance is first built. **The cryptography
 is real.** Every message is really signed, every verdict comes from the real verifier
 running real RSA, and all five failure modes are exercised against actual signatures. The
-broker is the only fake part, and the UI says so on every page.
+broker is the only fake part.
 
 ---
 
@@ -99,6 +99,57 @@ punitive to a customer and it is exactly right.
 | One digit changed after signing | **Fails** — body hash mismatch |
 | Hand-forwarded from a mail client | **Fails** — and the forwarder's own signature is shown being dismissed |
 | Valid signature, unknown domain | **Fails** — proves that party handled the mail, nothing more |
+
+---
+
+## Two sides, and the wall between them
+
+The manager and the allocator do not see the same product, and the difference is the
+product.
+
+**The manager** signs in at `/manage`. They see every metric at every basis, the evidence
+with each DKIM verdict, the reconciliation findings, the anchor timeline — and, on the
+same page, a **disclosure matrix**: one row per section of the payload, one column per
+profile, showing what each allocator actually receives. The numbers in it are measured,
+not asserted. Each column is the projection run for real and the response serialized, so
+the byte count is the byte count:
+
+| | Summary | Ratios & risk | Full detail | Full + positions |
+| --- | ---: | ---: | ---: | ---: |
+| Bytes on the wire | 4.0 kB | 11.0 kB | 36.7 kB | 37.4 kB |
+| Metrics | 6 | 18 | 18 | 18 |
+| Evidence documents | — | — | 13 | 13 |
+| NAV series | — | — | 12 | 12 |
+| Positions | — | — | — | 3 |
+
+Click a column and the page renders exactly that payload, using the same components the
+allocator's browser uses. Not a mock-up — one fetch against the same `project()` the
+allocator path calls, so the preview and the real thing cannot drift.
+
+**The allocator** never gets an account. They get one link, bound to their address and to
+a profile, watermarked with their name, revocable mid-conversation. Their page states
+which profile they are on and what that rung withholds, because a number withheld silently
+is indistinguishable from a number that does not exist.
+
+The wall is server-side and it fails closed: the response is *built up* from what a profile
+permits rather than built in full and filtered down. A dash in that table means the key is
+absent from the JSON. Opening dev tools finds nothing, because there is nothing to find.
+`tests/test_projection.py` asserts it against the serialized payload for every profile;
+`tests/test_owner_console.py` checks the matrix against the payloads it describes.
+
+### Demo credentials
+
+| Role | How you get in |
+| --- | --- |
+| **Manager** | `/manage`, with `PODARENA_ADMIN_TOKEN`. On a fixtures instance the login screen shows the token and fills it in for you — a three-minute demo should not be three minutes of typing. |
+| **Allocator** | `/view/demo-meridian-full` · `/view/demo-northwind-full` · `/view/demo-evidence-lab` · `/view/demo-meridian-summary` |
+
+The last two links are the same fund, `meridian-global-macro`, seen through `full_detail`
+and through `summary`. Open both.
+
+`demo_admin_token` is served by `/api/config` **only** when `PODARENA_DEMO_FIXTURES=true`,
+and an instance holding real evidence cannot run the synthetic corpus. Both halves of that
+are tested.
 
 ---
 
@@ -134,16 +185,18 @@ uv sync
 (cd web && npm install && npm run build)
 
 export PODARENA_DATABASE_URL="sqlite:///var/dev.db"   # Postgres in production
+export PODARENA_ADMIN_TOKEN="demo-manager-token"      # opens /manage; pick anything
 uv run python -m adapters.bootstrap                   # schema + append-only triggers
 uv run python -m demo.seed --reset --no-anchor        # generate the corpus, stage the demo
 uv run uvicorn api.app:app --port 8000
 ```
 
-Then open http://localhost:8000 — the demo links are on the front page and printed by the
-seed script.
+Then open http://localhost:8000. The two doors are on the front page: `/manage` for the
+manager — the login screen fills your token in — and the allocator links, which the seed
+script also prints.
 
 ```bash
-uv run pytest                                  # 78 tests
+uv run pytest                                  # 94 tests
 (cd contracts && forge install && forge test)  # 9 contract tests
 ```
 
