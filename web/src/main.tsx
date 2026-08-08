@@ -63,25 +63,36 @@ function Home() {
   return (
     <Page hero={hero}>
 
-      {/* Two doors, and which one you came through decides what exists. */}
-      <div className="two-doors">
-        <a className="door" href="/manage">
-          <div className="door-role">The manager</div>
-          <div className="door-name">Console</div>
+      {/* Three doors, and which one you came through decides what exists. */}
+      <div className="three-doors">
+        <a className="door door-fund" href="/manage">
+          <div className="door-role">The fund</div>
+          <div className="door-name">Every pod</div>
           <p className="small muted">
-            You see everything, and you see exactly what each allocator doesn't. Hand out
-            links, take them back, watch who opened what.
+            The platform's seat. The whole roster, every key any pod has handed out, and
+            the only seat that can take a new pod on.
           </p>
           <span className="arrow" aria-hidden>
             →
           </span>
         </a>
-        <a className="door" href={`/view/${DEMO_INVITES[0].token}`}>
+        <a className="door door-pm" href="/manage">
+          <div className="door-role">The portfolio manager</div>
+          <div className="door-name">One pod</div>
+          <p className="small muted">
+            Runs a single book. Sees their own record and their own allocators. The pod
+            next door doesn't exist as far as this seat is concerned.
+          </p>
+          <span className="arrow" aria-hidden>
+            →
+          </span>
+        </a>
+        <a className="door door-allocator" href={`/view/${DEMO_INVITES[0].token}`}>
           <div className="door-role">The allocator</div>
           <div className="door-name">One link</div>
           <p className="small muted">
-            No account, no password. One link, tied to your address, stamped with your
-            name, and killable in the middle of a conversation.
+            Outside the wall. No account, no password — one link, tied to your address,
+            stamped with your name, killable mid-conversation.
           </p>
           <span className="arrow" aria-hidden>
             →

@@ -724,6 +724,69 @@ input[type="text"]:focus {
   border-bottom-color: transparent;
 }
 
+/* One rail per seat. The fund's is onyx, the PM's is steel — a screenshot
+   should say whose eyes you are looking through before you read a word. */
+.rail-pm {
+  background: var(--color-steel);
+  color: rgba(255, 255, 255, 0.86);
+}
+.owner-rail strong {
+  letter-spacing: 0.14em;
+  color: #fff;
+}
+.seat-pill {
+  border-color: var(--color-onyx);
+  color: var(--color-onyx);
+}
+.seat-pill.seat-pm {
+  border-color: var(--color-steel);
+  color: var(--color-steel);
+}
+
+/* Sign-in: one button per seat, and the buttons carry the argument. */
+.seat-button {
+  display: grid;
+  grid-template-columns: 46px 1fr auto;
+  align-items: baseline;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  background: var(--surface-card);
+  color: inherit;
+  border: 1px solid var(--hairline);
+  border-left: 3px solid var(--color-steel);
+  border-radius: var(--radius-tile);
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: background var(--step), border-color var(--step);
+}
+.seat-button.seat-fund {
+  border-left-color: var(--color-onyx);
+}
+.seat-button:hover {
+  background: var(--surface-inset);
+  border-color: var(--hairline-strong);
+}
+.seat-button:hover.seat-fund {
+  border-left-color: var(--color-onyx);
+}
+.seat-role {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+}
+.seat-name {
+  font-weight: 500;
+}
+.seat-scope {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-dim);
+}
+
 .creds {
   background: var(--surface-inset);
   border: 1px solid var(--hairline-soft);
@@ -731,12 +794,28 @@ input[type="text"]:focus {
   padding: 16px 18px;
 }
 
-/* Two doors on the landing page. */
-.two-doors {
+/* Doors on the landing page. Three seats, three left-edge marks: the fund is
+   onyx, the PM is steel, the allocator is unmarked because they are outside the
+   wall and that is the point. */
+.two-doors,
+.three-doors {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 14px;
   margin-bottom: 20px;
+}
+.three-doors {
+  grid-template-columns: repeat(3, 1fr);
+}
+.door-fund,
+.door-pm {
+  border-left: 3px solid var(--color-onyx);
+}
+.door-pm {
+  border-left-color: var(--color-steel);
+}
+.door-allocator {
+  border-left: 3px dashed var(--hairline-strong);
 }
 .door {
   position: relative;
@@ -941,8 +1020,9 @@ button.small-btn {
   border-color: var(--hairline-strong);
 }
 
-@media (max-width: 720px) {
-  .two-doors {
+@media (max-width: 900px) {
+  .two-doors,
+  .three-doors {
     grid-template-columns: 1fr;
   }
 }

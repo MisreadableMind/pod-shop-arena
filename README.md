@@ -1,6 +1,6 @@
 # PodShop Arena
 
-**A fund manager's track record, proved with the broker's own signature and anchored on
+**A portfolio manager's track record, proved with the broker's own signature and anchored on
 Monad — checkable by an allocator who does not trust us and never asks our server
 anything.**
 
@@ -102,12 +102,24 @@ punitive to a customer and it is exactly right.
 
 ---
 
-## Two sides, and the wall between them
+## Three seats, and the walls between them
 
-The manager and the allocator do not see the same product, and the difference is the
-product.
+Nobody here sees the same product, and the differences *are* the product. A pod shop has
+two people inside the wall and one outside it:
 
-**The manager** signs in at `/manage`. They see every metric at every basis, the evidence
+**The fund** is the platform. It signs in with the admin token, sees the whole roster,
+and is the only seat that can take a new pod on.
+
+**The portfolio manager** runs one book. Same console, one pod. They can't open the pod
+next door — and the refusal is a `404`, not a `403`, because a refusal that distinguishes
+*not yours* from *no such thing* leaks the roster one guess at a time. Their token is
+`pm_<slug>_<mac>`, derived by HMAC from the fund's, so knowing yours tells you nothing
+about anyone else's. `/api/me` filters the roster server-side: the names of the other
+pods never reach a PM's machine to be hidden.
+
+**The allocator** is outside the wall and never gets an account at all.
+
+The manager's console — either seat — shows every metric at every basis, the evidence
 with each DKIM verdict, the reconciliation findings, the anchor timeline — and, on the
 same page, a **disclosure matrix**: one row per section of the payload, one column per
 profile, showing what each allocator actually receives. The numbers in it are measured,
@@ -126,7 +138,7 @@ Click a column and the page renders exactly that payload, using the same compone
 allocator's browser uses. Not a mock-up — one fetch against the same `project()` the
 allocator path calls, so the preview and the real thing cannot drift.
 
-**The allocator** never gets an account. They get one link, bound to their address and to
+An allocator never gets an account. They get one link, bound to their address and to
 a profile, watermarked with their name, revocable mid-conversation. Their page states
 which profile they are on and what that rung withholds, because a number withheld silently
 is indistinguishable from a number that does not exist.
@@ -139,15 +151,21 @@ absent from the JSON. Opening dev tools finds nothing, because there is nothing 
 
 ### Demo credentials
 
-| Role | How you get in |
-| --- | --- |
-| **Manager** | `/manage`, with `PODARENA_ADMIN_TOKEN`. On a fixtures instance the login screen shows the token and fills it in for you — a three-minute demo should not be three minutes of typing. |
-| **Allocator** | `/view/demo-meridian-full` · `/view/demo-northwind-full` · `/view/demo-evidence-lab` · `/view/demo-meridian-summary` |
+Sign-in is one click. `/manage` lists one button per seat — *Fund · all 3 pods*, then a
+button per PM — and the buttons make the argument before you've even signed in.
+
+| Seat | How you get in | Reach |
+| --- | --- | --- |
+| **Fund** | `/manage` → *Fund* | Every pod |
+| **Portfolio manager** | `/manage` → *Meridian Global Macro* | That pod, nothing else |
+| **Allocator** | `/view/demo-meridian-full` · `/view/demo-northwind-full` · `/view/demo-evidence-lab` · `/view/demo-meridian-summary` | One profile of one pod |
+
+Open the fund seat, then a PM seat, and watch the roster disappear.
 
 The last two links are the same fund, `meridian-global-macro`, seen through `full_detail`
 and through `summary`. Open both.
 
-`demo_admin_token` is served by `/api/config` **only** when `PODARENA_DEMO_FIXTURES=true`,
+`demo_admin_token` and the PM tokens are served **only** when `PODARENA_DEMO_FIXTURES=true`,
 and an instance holding real evidence cannot run the synthetic corpus. Both halves of that
 are tested.
 
@@ -196,7 +214,7 @@ manager — the login screen fills your token in — and the allocator links, wh
 script also prints.
 
 ```bash
-uv run pytest                                  # 94 tests
+uv run pytest                                  # 99 tests
 (cd contracts && forge install && forge test)  # 9 contract tests
 ```
 
@@ -292,7 +310,7 @@ migration tool implies a guarantee about upgrade paths that has never been exerc
 
 ## Tests
 
-78 Python tests and 9 Solidity tests. The ones that matter:
+99 Python tests and 9 Solidity tests. The ones that matter:
 
 - **Determinism** — a golden Merkle root checked into the repo, so a different machine and
   a different day have to agree. Plus: leaf order doesn't move the root, one minor unit
@@ -301,6 +319,8 @@ migration tool implies a guarantee about upgrade paths that has never been exerc
   never opens a socket.
 - **Tamper drill** — flip a byte: the verdict fails, the tier drops, the root differs, and
   the record says so unprompted.
+- **Seats** — a PM token opens its own pod and 404s on every route of the pod next
+  door, and a token forged by swapping the slug fails the MAC.
 - **Projection** — every disclosure profile asserted against the *serialized wire payload*,
   not the component. A field a profile forbids is never assembled, so there's no
   client-side toggle to defeat.

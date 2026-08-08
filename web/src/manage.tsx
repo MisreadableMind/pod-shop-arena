@@ -17,15 +17,16 @@ import { Page } from "./shell";
 
 // -- login ----------------------------------------------------------------
 
-/** The console's door.
+/** The console's door: pick a seat, click it, you're in.
  *
- *  On a fixtures instance the token is handed over by /api/config and typed
- *  into the box for you — three minutes of demo should not be three minutes of
- *  typing. On an instance holding real evidence that field is null and the box
- *  is empty, because `demo_fixtures` and real evidence cannot both be true. */
+ *  On a fixtures instance /api/demo-logins hands over one token per seat, so a
+ *  three-minute demo is a click rather than three minutes of typing — and the
+ *  buttons themselves make the point, because "Fund · all 3 pods" next to
+ *  "Meridian · this pod only" says what the wall is before you've signed in.
+ *  On an instance holding real evidence that list is empty and all you get is
+ *  the box, because `demo_fixtures` and real evidence cannot both be true. */
 function LoginGate({ onAuthed }: { onAuthed: () => void }) {
-  const config = useQuery({ queryKey: ["config"], queryFn: api.config });
-  const demoToken = config.data?.demo_admin_token ?? "";
+  const logins = useQuery({ queryKey: ["demo-logins"], queryFn: api.demoLogins });
   const [value, setValue] = useState("");
 
   const submit = (token: string) => {
@@ -36,41 +37,37 @@ function LoginGate({ onAuthed }: { onAuthed: () => void }) {
 
   return (
     <Page>
-      <div className="card card-accent" style={{ maxWidth: 560, margin: "40px auto" }}>
-        <h2>Manager console</h2>
-        <p className="lede">
-          This is the manager's side. You see all of it. And every time the console shows
-          you something an allocator hasn't been granted, it says so.
+      <div className="card card-accent" style={{ maxWidth: 520, margin: "48px auto" }}>
+        <h2 style={{ marginBottom: 6 }}>Sign in</h2>
+        <p className="small muted" style={{ marginBottom: 18 }}>
+          Two seats inside the wall. Allocators don't have one.
         </p>
-        <div className="row">
+
+        {logins.data?.map((login) => (
+          <button
+            key={login.token}
+            className={`seat-button seat-${login.role}`}
+            onClick={() => submit(login.token)}
+          >
+            <span className="seat-role">{login.role === "fund" ? "Fund" : "PM"}</span>
+            <span className="seat-name">{login.label}</span>
+            <span className="seat-scope">{login.scope}</span>
+          </button>
+        ))}
+
+        <div className="row" style={{ marginTop: 16 }}>
           <input
             type="text"
             value={value}
-            placeholder="admin token"
+            placeholder="or paste a token"
             onChange={(event) => setValue(event.target.value)}
             onKeyDown={(event) => event.key === "Enter" && submit(value)}
             aria-label="Admin token"
           />
           <button onClick={() => submit(value)} disabled={!value.trim()}>
-            Sign in
+            Go
           </button>
         </div>
-
-        {demoToken && (
-          <div className="creds" style={{ marginTop: 18 }}>
-            <div className="card-head" style={{ marginBottom: 8 }}>
-              <h3>Demo credentials</h3>
-              <span className="pill">fixtures instance</span>
-            </div>
-            <div className="hashline">
-              <span className="k">Manager token</span>
-              <span className="v">{demoToken}</span>
-            </div>
-            <button className="ghost" style={{ marginTop: 14 }} onClick={() => submit(demoToken)}>
-              Use the demo token
-            </button>
-          </div>
-        )}
       </div>
     </Page>
   );
@@ -93,33 +90,48 @@ function useAdminGate(): { authed: boolean; signIn: () => void; signOut: () => v
 // -- fund list ------------------------------------------------------------
 
 export function ManageHome() {
-  useTitle("Manager console — PodShop Arena");
   const gate = useAdminGate();
-  const config = useQuery({ queryKey: ["config"], queryFn: api.config });
-  const records = useQuery({ queryKey: ["records"], queryFn: api.records });
+  const me = useQuery({ queryKey: ["me"], queryFn: owner.me, enabled: gate.authed });
+
+  useTitle(me.data?.role === "pm" ? "PM console — PodShop Arena" : "Fund console — PodShop Arena");
 
   if (!gate.authed) return <LoginGate onAuthed={gate.signIn} />;
+  if (me.isError) return <LoginGate onAuthed={gate.signIn} />;
+  if (!me.data)
+    return (
+      <Page seat="fund">
+        <p className="muted">Loading…</p>
+      </Page>
+    );
+
+  // A PM has no roster to land on — /manage *is* their pod. Rendering the record
+  // page here rather than redirecting keeps the URL honest about what they can
+  // reach, which is one thing.
+  if (me.data.role === "pm" && me.data.record_slug)
+    return <ManageRecord slug={me.data.record_slug} />;
 
   return (
-    <Page mode="owner">
+    <Page seat="fund" scope={`${me.data.records.length} pods`}>
       <div className="record-head">
         <div className="row spread">
-          <h1>Your funds</h1>
+          <h1>The roster</h1>
           <button className="ghost" onClick={gate.signOut}>
             Sign out
           </button>
         </div>
         <p className="muted">
-          Everything this instance holds, and every key you've handed out against it.
+          Every pod on the platform, and every key any of them has handed out. This page
+          is the one thing a portfolio manager cannot see — sign in as one and it's gone,
+          because the list is filtered on the server, not in your browser.
         </p>
       </div>
 
       <div className="card">
         <div className="card-head">
-          <h2>Records</h2>
-          <span className="pill">{records.data?.length ?? 0} funds</span>
+          <h2>Pods</h2>
+          <span className="pill">{me.data.records.length} pods</span>
         </div>
-        {records.data?.map((record) => (
+        {me.data.records.map((record) => (
           <a className="record-link" key={record.slug} href={`/manage/${record.slug}`}>
             <div>
               <div className="name">{record.name}</div>
@@ -132,57 +144,68 @@ export function ManageHome() {
         ))}
       </div>
 
-      {config.data?.demo_fixtures && (
-        <div className="card">
-          <div className="card-head">
-            <h2>Demo credentials</h2>
-            <span className="pill">synthetic corpus</span>
-          </div>
-          <p className="lede">
-            Two sides, two kinds of credential. You sign in with a token. An allocator
-            never gets an account at all — just one link, tied to their address and to a
-            profile, and you can take it back.
-          </p>
-
-          <h3 style={{ marginTop: 20 }}>Manager</h3>
-          <div className="hashline">
-            <span className="k">Console</span>
-            <span className="v">
-              <a href="/manage">/manage</a>
-            </span>
-          </div>
-          <div className="hashline">
-            <span className="k">Token</span>
-            <span className="v">{config.data.demo_admin_token ?? "open instance"}</span>
-          </div>
-
-          <h3 style={{ marginTop: 24 }}>Allocators</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Invited address</th>
-                <th>Record</th>
-                <th>Profile</th>
-                <th>Link</th>
-              </tr>
-            </thead>
-            <tbody>
-              {DEMO_INVITES.map((invite) => (
-                <tr key={invite.token}>
-                  <td className="mono small">{invite.viewer}</td>
-                  <td>{invite.record}</td>
-                  <td>
-                    <span className="pill">{PROFILE_LABELS[invite.profile]}</span>
-                  </td>
-                  <td className="small">
-                    <a href={`/view/${invite.token}`}>open</a>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <div className="card">
+        <div className="card-head">
+          <h2>Who sees what</h2>
+          <span className="pill">three seats</span>
         </div>
-      )}
+        <table>
+          <thead>
+            <tr>
+              <th>Seat</th>
+              <th>Credential</th>
+              <th>Reach</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <span className="pill seat-pill seat-fund">Fund</span>
+              </td>
+              <td className="small">One admin token</td>
+              <td className="small">Every pod, plus the power to take a new one on.</td>
+            </tr>
+            <tr>
+              <td>
+                <span className="pill seat-pill seat-pm">Portfolio manager</span>
+              </td>
+              <td className="small mono">pm_&lt;pod&gt;_&lt;mac&gt;</td>
+              <td className="small">
+                Their own pod. Asking after another one returns 404, not 403 — they don't
+                even learn it exists.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span className="pill">Allocator</span>
+              </td>
+              <td className="small">No account at all</td>
+              <td className="small">
+                One link, bound to their address and a disclosure profile, revocable
+                mid-conversation.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3 style={{ marginTop: 22 }}>Allocator links, pre-loaded</h3>
+        <table>
+          <tbody>
+            {DEMO_INVITES.map((invite) => (
+              <tr key={invite.token}>
+                <td className="mono small">{invite.viewer}</td>
+                <td>{invite.record}</td>
+                <td>
+                  <span className="pill">{PROFILE_LABELS[invite.profile]}</span>
+                </td>
+                <td className="small">
+                  <a href={`/view/${invite.token}`}>open</a>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </Page>
   );
 }
@@ -193,6 +216,11 @@ export function ManageRecord({ slug }: { slug: string }) {
   const gate = useAdminGate();
   const queryClient = useQueryClient();
   const [profile, setProfile] = useState<ProfileSlug>("summary");
+
+  const me = useQuery({ queryKey: ["me"], queryFn: owner.me, enabled: gate.authed });
+  const seat = me.data?.role ?? "fund";
+  const scope =
+    seat === "pm" ? "this pod only" : `${me.data?.records.length ?? 0} pods`;
 
   const view = useQuery({
     queryKey: ["owner", slug],
@@ -241,13 +269,13 @@ export function ManageRecord({ slug }: { slug: string }) {
     return <LoginGate onAuthed={gate.signIn} />;
   if (view.isLoading)
     return (
-      <Page mode="owner">
+      <Page seat={seat} scope={scope}>
         <p className="muted">Loading…</p>
       </Page>
     );
   if (view.isError)
     return (
-      <Page mode="owner">
+      <Page seat={seat} scope={scope}>
         <div className="card">
           <h2>Could not open {slug}</h2>
           <p className="muted small">{String(view.error)}</p>
@@ -258,7 +286,7 @@ export function ManageRecord({ slug }: { slug: string }) {
   const data = view.data!;
 
   return (
-    <Page mode="owner">
+    <Page seat={seat} scope={scope}>
       <div className="record-head">
         <div className="row spread">
           <h1>{data.record.name}</h1>
@@ -267,12 +295,21 @@ export function ManageRecord({ slug }: { slug: string }) {
             <button onClick={() => rebuild.mutate()} disabled={rebuild.isPending}>
               {rebuild.isPending ? "Re-anchoring…" : "Rebuild & re-anchor"}
             </button>
+            <button className="ghost" onClick={gate.signOut}>
+              Sign out
+            </button>
           </div>
         </div>
         <p className="muted">
           {data.record.strategy} · snapshot {data.snapshot.seq} ·{" "}
           <span className="mono">{data.snapshot.root.slice(0, 22)}…</span>
         </p>
+        {seat === "pm" && (
+          <p className="small muted" style={{ marginTop: 8 }}>
+            You're the PM here. This is your pod and the only one you can open — the fund
+            sees this page too, alongside everyone else's.
+          </p>
+        )}
         {rebuild.isSuccess && (
           <p className="small" style={{ marginTop: 10 }}>
             Snapshot {rebuild.data.seq} built — {rebuild.data.metrics} metrics,{" "}

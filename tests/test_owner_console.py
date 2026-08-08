@@ -14,7 +14,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from adapters.config import settings
-from api.app import app
+from api.app import app, pm_token
 from api.projection import Profile
 
 from tests.test_projection import seeded  # noqa: F401  (fixture)
@@ -168,3 +168,50 @@ class TestInviteList:
         assert after[0]["status"] == "revoked"
         # And the link stops opening, which is the point of the button.
         assert client.get("/api/view/tok-owner-revoke").status_code == 403
+
+
+class TestSeats:
+    """Fund and portfolio manager are two seats, not one with a nicer label.
+
+    The interesting case is the negative one: a PM holding a perfectly valid
+    token must not be able to read the pod next door, and must not be able to
+    learn it exists. Everything else in the console is a consequence of that.
+    """
+
+    def test_a_pm_token_opens_its_own_pod(self, client, admin, seeded):  # noqa: F811
+        token = pm_token("fence-fund")
+        response = client.get("/api/records/fence-fund/owner", headers=auth(token))
+        assert response.status_code == 200
+
+    def test_a_pm_cannot_reach_the_pod_next_door(self, client, admin, seeded):  # noqa: F811
+        token = pm_token("some-other-pod")
+        for path in (
+            "/api/records/fence-fund/owner",
+            "/api/records/fence-fund/disclosure",
+            "/api/records/fence-fund/invites",
+            "/api/records/fence-fund/access-log",
+            "/api/records/fence-fund/preview/summary",
+        ):
+            response = client.get(path, headers=auth(token))
+            # 404 rather than 403: a refusal that distinguishes "not yours" from
+            # "no such thing" leaks the roster one guess at a time.
+            assert response.status_code == 404, path
+
+    def test_a_pm_token_is_not_forgeable_from_a_sibling(self, client, admin, seeded):  # noqa: F811
+        """Knowing your own token tells you nothing about anyone else's."""
+        mine = pm_token("fence-fund")
+        forged = mine.replace("fence-fund", "some-other-pod")
+        assert client.get("/api/me", headers=auth(forged)).status_code == 401
+
+    def test_the_roster_is_filtered_on_the_server(self, client, admin, seeded):  # noqa: F811
+        fund = client.get("/api/me", headers=auth(admin)).json()
+        assert fund["role"] == "fund"
+        assert any(r["slug"] == "fence-fund" for r in fund["records"])
+
+        pm = client.get("/api/me", headers=auth(pm_token("fence-fund"))).json()
+        assert pm["role"] == "pm"
+        assert [r["slug"] for r in pm["records"]] == ["fence-fund"]
+
+    def test_only_the_fund_can_take_on_a_new_pod(self, client, admin, seeded):  # noqa: F811
+        body = {"slug": "brand-new-pod", "name": "Brand New"}
+        assert client.post("/api/records", json=body, headers=auth(pm_token("fence-fund"))).status_code == 403

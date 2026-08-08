@@ -8,6 +8,7 @@ that decides what exists in the response at all.
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
 import secrets
 from datetime import datetime, timedelta, timezone
@@ -68,20 +69,89 @@ def session() -> Session:
 SessionDep = Annotated[Session, Depends(session)]
 
 
-def require_admin(authorization: Annotated[str | None, Header()] = None) -> None:
+# -- who is asking ----------------------------------------------------------
+#
+# A pod shop has two people on the inside of the wall, and they are not the same
+# person. The **fund** allocates across pods: it sees the whole roster, and it is
+# the only party that can add a pod or take one on. A **portfolio manager** runs
+# one pod: they see their own track record, hand out their own links, and cannot
+# so much as read the name of the pod next door. The **allocator** is outside the
+# wall entirely and never gets a token at all — see `/api/view/{token}`.
+#
+# Collapsing the first two into one "admin" would have been less code and a lie:
+# the whole product is about who can see what, and a console that shows a PM the
+# fund's roster is the same failure it exists to prevent.
+
+
+class Principal(BaseModel):
+    role: str  # "fund" | "pm"
+    record_slug: str | None = None  # set for pm, None for fund
+    label: str
+
+    def covers(self, slug: str) -> bool:
+        return self.role == "fund" or self.record_slug == slug
+
+
+def pm_token(slug: str) -> str:
+    """A pod's token, derived from the fund's.
+
+    Deterministic on purpose — a reseed or a redeploy has to leave the demo
+    links working, and there is no PM-credential table to migrate. The slug
+    travels in the clear so the token resolves without a database hit; the MAC
+    is what makes it unforgeable. A PM who knows their own token learns nothing
+    about the pod next door, because they can't compute its MAC without the
+    fund's secret."""
+    secret = settings().admin_token or "open-instance"
+    mac = hmac.new(secret.encode(), f"pm:{slug}".encode(), hashlib.sha256)
+    return f"pm_{slug}_{mac.hexdigest()[:20]}"
+
+
+def require_principal(authorization: Annotated[str | None, Header()] = None) -> Principal:
+    supplied = (authorization or "").removeprefix("Bearer ").strip()
     expected = settings().admin_token
+
+    if expected and secrets.compare_digest(supplied, expected):
+        return Principal(role="fund", label="Fund")
+
+    if supplied.startswith("pm_"):
+        slug = supplied[3:].rpartition("_")[0]
+        if slug and secrets.compare_digest(pm_token(slug), supplied):
+            return Principal(role="pm", record_slug=slug, label="Portfolio manager")
+
     if not expected:
         # No token configured means an open instance. Fine for the fixture
         # demo, refused the moment real evidence is involved.
         if settings().demo_fixtures:
-            return
+            return Principal(role="fund", label="Fund")
         raise HTTPException(503, "admin token is not configured")
-    supplied = (authorization or "").removeprefix("Bearer ").strip()
-    if not secrets.compare_digest(supplied, expected):
-        raise HTTPException(401, "bad admin token")
+
+    raise HTTPException(401, "bad admin token")
 
 
-AdminDep = Annotated[None, Depends(require_admin)]
+AdminDep = Annotated[Principal, Depends(require_principal)]
+
+
+def require_fund(who: AdminDep) -> Principal:
+    """Roster-level authority. A PM is not it."""
+    if who.role != "fund":
+        raise HTTPException(403, "only the fund can do this")
+    return who
+
+
+FundDep = Annotated[Principal, Depends(require_fund)]
+
+
+def require_scope(slug: str, who: AdminDep) -> Principal:
+    """Guards every per-record console route. `slug` comes off the path.
+
+    404, not 403: a PM asking about a pod that isn't theirs shouldn't learn
+    whether it exists."""
+    if not who.covers(slug):
+        raise HTTPException(404, "no such record")
+    return who
+
+
+ScopeDep = Annotated[Principal, Depends(require_scope)]
 
 
 def token_hash(token: str) -> str:
@@ -114,6 +184,60 @@ def config() -> dict[str, Any]:
         # real evidence cannot run the synthetic corpus. Both halves of that are
         # tested — see tests/test_owner_console.py.
         "demo_admin_token": cfg.admin_token if cfg.demo_fixtures else None,
+    }
+
+
+@app.get("/api/demo-logins")
+def demo_logins(db_session: SessionDep) -> list[dict[str, Any]]:
+    """One click per role, on a fixtures instance only.
+
+    Same rule as the admin token above: `None` unless this instance is running
+    the synthetic corpus, and an instance holding real evidence cannot."""
+    if not settings().demo_fixtures:
+        return []
+    records = db_session.scalars(select(db.Record).order_by(db.Record.created_at)).all()
+    logins = [
+        {
+            "role": "fund",
+            "label": "Fund",
+            "scope": f"all {len(records)} pods",
+            "token": settings().admin_token or "",
+        }
+    ]
+    logins += [
+        {
+            "role": "pm",
+            "label": record.name,
+            "scope": "this pod only",
+            "token": pm_token(record.slug),
+        }
+        for record in records
+    ]
+    return logins
+
+
+@app.get("/api/me")
+def me(db_session: SessionDep, who: AdminDep) -> dict[str, Any]:
+    """Who you are and, therefore, what the console is allowed to list.
+
+    The roster is filtered here rather than in the browser. A PM's console does
+    not render a list it then hides — the names of the other pods never reach
+    their machine."""
+    records = db_session.scalars(select(db.Record).order_by(db.Record.created_at)).all()
+    mine = [record for record in records if who.covers(record.slug)]
+    return {
+        "role": who.role,
+        "label": who.label,
+        "record_slug": who.record_slug,
+        "records": [
+            {
+                "slug": record.slug,
+                "name": record.name,
+                "strategy": record.strategy,
+                "chain_key": record.chain_key,
+            }
+            for record in mine
+        ],
     }
 
 
@@ -187,7 +311,7 @@ class RecordIn(BaseModel):
 
 
 @app.post("/api/records", status_code=201)
-def create_record(body: RecordIn, db_session: SessionDep, _: AdminDep) -> dict[str, Any]:
+def create_record(body: RecordIn, db_session: SessionDep, _: FundDep) -> dict[str, Any]:
     if db_session.scalar(select(db.Record).where(db.Record.slug == body.slug)):
         raise HTTPException(409, f"record {body.slug} already exists")
 
@@ -212,7 +336,7 @@ def create_record(body: RecordIn, db_session: SessionDep, _: AdminDep) -> dict[s
 async def upload_document(
     slug: str,
     db_session: SessionDep,
-    _: AdminDep,
+    _: ScopeDep,
     file: UploadFile = File(...),
 ) -> dict[str, Any]:
     """Ingest a raw message.
@@ -238,7 +362,7 @@ async def upload_document(
 
 
 @app.post("/api/records/{slug}/rebuild")
-def rebuild(slug: str, db_session: SessionDep, _: AdminDep) -> dict[str, Any]:
+def rebuild(slug: str, db_session: SessionDep, _: ScopeDep) -> dict[str, Any]:
     record = _record(db_session, slug)
     outcome = pipeline.rebuild(db_session, record_id=record.id)
     return {
@@ -263,7 +387,7 @@ class InviteIn(BaseModel):
 
 @app.post("/api/records/{slug}/invites", status_code=201)
 def create_invite(
-    slug: str, body: InviteIn, db_session: SessionDep, _: AdminDep
+    slug: str, body: InviteIn, db_session: SessionDep, _: ScopeDep
 ) -> dict[str, Any]:
     """Issue a single-use, expiring, revocable invite bound to one identity.
 
@@ -298,10 +422,15 @@ def create_invite(
 
 @app.post("/api/invites/{invite_id}/revoke")
 def revoke_invite(
-    invite_id: str, db_session: SessionDep, _: AdminDep
+    invite_id: str, db_session: SessionDep, who: AdminDep
 ) -> dict[str, Any]:
     invite = db_session.get(db.Invite, invite_id)
     if invite is None:
+        raise HTTPException(404, "no such invite")
+    # The one console route with no slug in the path, so the scope check has to
+    # walk from the invite back to the pod that issued it.
+    record = db_session.get(db.Record, invite.record_id)
+    if record is None or not who.covers(record.slug):
         raise HTTPException(404, "no such invite")
     invite.revoked_at = datetime.now(timezone.utc)
     db_session.flush()
@@ -344,7 +473,7 @@ def _projection_inputs(db_session: Session, record: db.Record) -> dict[str, Any]
 
 
 @app.get("/api/records/{slug}/owner")
-def owner_view(slug: str, db_session: SessionDep, _: AdminDep) -> dict[str, Any]:
+def owner_view(slug: str, db_session: SessionDep, _: ScopeDep) -> dict[str, Any]:
     """The record as the manager who owns it sees it: everything.
 
     Same `project()` the allocator path uses, at the widest profile and with no
@@ -362,7 +491,7 @@ def owner_view(slug: str, db_session: SessionDep, _: AdminDep) -> dict[str, Any]
 
 
 @app.get("/api/records/{slug}/disclosure")
-def disclosure_matrix(slug: str, db_session: SessionDep, _: AdminDep) -> dict[str, Any]:
+def disclosure_matrix(slug: str, db_session: SessionDep, _: ScopeDep) -> dict[str, Any]:
     """What each profile would actually put on the wire, measured.
 
     The manager's real question is not "is it hidden in the UI" — it is "did it
@@ -407,7 +536,7 @@ def disclosure_matrix(slug: str, db_session: SessionDep, _: AdminDep) -> dict[st
 
 @app.get("/api/records/{slug}/preview/{profile}")
 def preview_as(
-    slug: str, profile: str, db_session: SessionDep, _: AdminDep
+    slug: str, profile: str, db_session: SessionDep, _: ScopeDep
 ) -> dict[str, Any]:
     """The exact bytes an allocator on this profile would receive.
 
@@ -427,7 +556,7 @@ def preview_as(
 
 
 @app.get("/api/records/{slug}/invites")
-def list_invites(slug: str, db_session: SessionDep, _: AdminDep) -> list[dict[str, Any]]:
+def list_invites(slug: str, db_session: SessionDep, _: ScopeDep) -> list[dict[str, Any]]:
     """Who holds a key to this record, and what it opens.
 
     The token itself is unrecoverable — only its hash was stored — so this is a
@@ -483,7 +612,7 @@ def list_invites(slug: str, db_session: SessionDep, _: AdminDep) -> list[dict[st
 
 
 @app.get("/api/records/{slug}/access-log")
-def access_log(slug: str, db_session: SessionDep, _: AdminDep) -> list[dict[str, Any]]:
+def access_log(slug: str, db_session: SessionDep, _: ScopeDep) -> list[dict[str, Any]]:
     record = _record(db_session, slug)
     invites = db_session.scalars(
         select(db.Invite).where(db.Invite.record_id == record.id)

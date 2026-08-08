@@ -231,6 +231,7 @@ export const api = {
     fetch("/api/records").then(
       json<Array<{ slug: string; name: string; strategy: string | null }>>,
     ),
+  demoLogins: () => fetch("/api/demo-logins").then(json<DemoLogin[]>),
   view: (token: string) => fetch(`/api/view/${token}`).then(json<RecordView>),
   acceptNda: (token: string) =>
     fetch(`/api/view/${token}/nda`, {
@@ -277,7 +278,22 @@ async function authed<T>(path: string, init: RequestInit = {}): Promise<T> {
   return json<T>(response);
 }
 
+export type DemoLogin = {
+  role: "fund" | "pm";
+  label: string;
+  scope: string;
+  token: string;
+};
+
+export type Me = {
+  role: "fund" | "pm";
+  label: string;
+  record_slug: string | null;
+  records: Array<{ slug: string; name: string; strategy: string | null }>;
+};
+
 export const owner = {
+  me: () => authed<Me>("/api/me"),
   view: (slug: string) => authed<RecordView>(`/api/records/${slug}/owner`),
   disclosure: (slug: string) => authed<DisclosureMatrix>(`/api/records/${slug}/disclosure`),
   preview: (slug: string, profile: ProfileSlug) =>
