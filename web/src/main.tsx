@@ -119,7 +119,8 @@ function View({ token }: { token: string }) {
           <TierBadge tier={data.tier} label={data.tier_label} />
         </div>
         <p className="muted">
-          {data.record.strategy} · {data.tier_meaning}
+          {data.record.strategy ? `${data.record.strategy} · ` : ""}
+          {data.tier_meaning}
         </p>
       </div>
 

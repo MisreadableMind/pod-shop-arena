@@ -48,7 +48,9 @@ export function SiteFooter() {
   return (
     <footer className="site-footer">
       <div className="footer-inner">
-        <div className="footer-mark">The signature was in your inbox the whole time.</div>
+        <div className="footer-mark">
+          PodShop <span>Arena</span>
+        </div>
       </div>
     </footer>
   );
@@ -81,10 +83,7 @@ export function Page({
                 this has crossed the wire
               </>
             ) : (
-              <>
-                <strong>PORTFOLIO MANAGER</strong> · {scope ?? "your pod"} · the roster
-                next door is not yours to read
-              </>
+              <strong>PORTFOLIO MANAGER</strong>
             )}
           </div>
         </div>

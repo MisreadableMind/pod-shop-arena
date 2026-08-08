@@ -323,11 +323,17 @@ code,
 }
 .site-footer .footer-mark {
   font-family: var(--font-display);
-  font-size: 1.9rem;
+  font-size: 1.5rem;
   line-height: 1.15;
   letter-spacing: -0.02em;
   color: var(--text-invert);
-  max-width: 16ch;
+}
+/* Same dawn arc that draws the mark in the masthead, bookending the page. */
+.site-footer .footer-mark span {
+  background: var(--gradient-dawn-arc);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 .site-footer a {
   color: var(--text-invert);
@@ -1290,8 +1296,8 @@ button.small-btn {
   padding: 22px 24px 24px;
 }
 .opt h3 {
-  margin: 14px 0 8px;
-  font-size: 1.06rem;
+  margin: 16px 0 6px;
+  font-size: 1.14rem;
 }
 .opt p {
   margin: 0;
@@ -1300,17 +1306,26 @@ button.small-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 27px;
-  height: 27px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   border: 1px solid var(--hairline-strong);
   color: var(--text-dim);
-  font-size: 0.78rem;
+  font-size: 0.94rem;
 }
 .opt-mark-on {
   background: var(--color-onyx);
   border-color: var(--color-onyx);
   color: var(--text-invert);
+}
+/* The two that fail look like they failed: no fill, a dashed edge, and a
+   heading that has given up half its ink. */
+.opt-bad {
+  background: transparent;
+  border-style: dashed;
+}
+.opt-bad h3 {
+  color: var(--text-dim);
 }
 .opt-good {
   border-color: var(--hairline-strong);
@@ -1340,7 +1355,7 @@ button.small-btn {
 .flow-step::after {
   content: "";
   position: absolute;
-  top: 13px;
+  top: 22px;
   right: -30px;
   width: 30px;
   height: 2px;
@@ -1360,23 +1375,31 @@ button.small-btn {
     background-position: 13px 0;
   }
 }
-.flow-n {
+.flow-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
-  border: 1px solid var(--hairline-strong);
-  background: var(--surface-page);
+  border: 1px solid var(--hairline);
+  background: var(--surface-card);
+  color: var(--color-onyx);
+}
+.flow-icon svg {
+  width: 22px;
+  height: 22px;
+}
+.flow-n {
   font-family: var(--font-mono);
-  font-size: 0.68rem;
-  letter-spacing: 0.04em;
+  font-size: 0.67rem;
+  letter-spacing: 0.14em;
   color: var(--text-dim);
+  margin-top: 14px;
 }
 .flow-step h3 {
-  margin: 13px 0 7px;
-  font-size: 1rem;
+  margin: 5px 0 7px;
+  font-size: 1.02rem;
 }
 .flow-step p {
   margin: 0;

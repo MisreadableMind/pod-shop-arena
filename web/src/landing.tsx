@@ -14,7 +14,7 @@ import { Page } from "./shell";
  *
  *  Reduced-motion visitors get the finished state on mount. That is the same
  *  page with the theatre switched off, which is the point: none of the motion
- *  below carries information. */
+ *  here carries information. */
 function useReveal() {
   useEffect(() => {
     const nodes = Array.from(document.querySelectorAll<HTMLElement>(".reveal"));
@@ -40,14 +40,61 @@ function useReveal() {
 
 const DEMO_LINK = `/view/${DEMO_INVITES[0].token}`;
 
+const delay = (seconds: number) => ({ "--d": `${seconds}s` }) as CSSProperties;
+
+/** Line-art glyphs, hand-drawn like the charts and for the same reason: an
+ *  icon font is a network dependency on a page whose entire argument is that
+ *  it does not need anyone else's server. */
+function Glyph({ name }: { name: "mail" | "key" | "block" | "eye" }) {
+  const shapes = {
+    mail: (
+      <>
+        <rect x="2.5" y="5" width="19" height="14" rx="2.5" />
+        <path d="M3.5 7l8.5 6 8.5-6" />
+      </>
+    ),
+    key: (
+      <>
+        <circle cx="8" cy="12" r="4.2" />
+        <path d="M12.2 12H21M18 12v3.4M15.2 12v2.4" />
+      </>
+    ),
+    block: (
+      <>
+        <path d="M12 2.8l8 4.6v9.2l-8 4.6-8-4.6V7.4z" />
+        <path d="M4 7.4l8 4.6 8-4.6M12 12v9.2" />
+      </>
+    ),
+    eye: (
+      <>
+        <path d="M1.8 12S5.4 5.6 12 5.6 22.2 12 22.2 12 18.6 18.4 12 18.4 1.8 12 1.8 12z" />
+        <circle cx="12" cy="12" r="3.1" />
+      </>
+    ),
+  };
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.35"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      {shapes[name]}
+    </svg>
+  );
+}
+
 /** The hero's right half: one statement, checked on a loop.
  *
  *  It is the whole product in six lines. An email nobody asked the bank to
- *  send, a signature header, two numbers, and a verdict that arrives a beat
+ *  send, a signature header, two numbers, and a verdict that lands a beat
  *  later. Pure CSS, no state, decorative to a screen reader. */
 function ProofCard() {
   return (
-    <div className="proof-card reveal" style={{ "--d": "0.24s" } as CSSProperties} aria-hidden>
+    <div className="proof-card reveal" style={delay(0.22)} aria-hidden>
       <div className="proof-head">
         <span className="mono">statement-2025-11.eml</span>
         <span className="proof-from">sent by your broker</span>
@@ -70,7 +117,7 @@ function ProofCard() {
       </div>
 
       <div className="proof-verdict">
-        <span className="proof-wait mono">checking RSA against the captured key…</span>
+        <span className="proof-wait mono">checking RSA…</span>
         <span className="proof-ok">
           <span className="proof-tick" />
           SOURCE SIGNED
@@ -80,9 +127,9 @@ function ProofCard() {
   );
 }
 
-/** Twelve months as twelve marks. Solid is a signature, hollow is somebody's
- *  keyboard. The hollow one is the entire argument of that section, so it gets
- *  to keep pulsing after the rest have settled. */
+/** Twelve months as twelve marks. Solid is a signature, dashed is somebody's
+ *  keyboard. The dashed one is the whole argument of that section, so it keeps
+ *  breathing after the rest have settled. */
 function Ticks({ typed }: { typed?: number }) {
   return (
     <div className="ticks">
@@ -107,13 +154,11 @@ export function Home() {
       <div className="hero-inner hero-grid">
         <div>
           <h1 className="reveal">Anyone can type a track record.</h1>
-          <p className="hero-lede reveal" style={{ "--d": "0.08s" } as CSSProperties}>
-            Which is why an allocator cannot tell your twelve good months from twelve
-            numbers you invented on a Tuesday. Your broker already signs every statement
-            it emails you. We read that signature, and hand the allocator a record they
-            can check without asking us anything.
+          <p className="hero-lede reveal" style={delay(0.08)}>
+            Your broker already signed the real one. It has been sitting in your inbox
+            this whole time.
           </p>
-          <div className="hero-cta reveal" style={{ "--d": "0.16s" } as CSSProperties}>
+          <div className="hero-cta reveal" style={delay(0.16)}>
             <a className="cta" href={DEMO_LINK}>
               See a signed record
               <span aria-hidden> →</span>
@@ -122,9 +167,6 @@ export function Home() {
               Sign in as a fund or a PM
             </a>
           </div>
-          <p className="cta-note reveal" style={{ "--d": "0.22s" } as CSSProperties}>
-            Everything is pre loaded. No account, no wallet, nothing to install.
-          </p>
         </div>
         <ProofCard />
       </div>
@@ -137,35 +179,23 @@ export function Home() {
       <section className="section">
         <div className="section-head reveal">
           <div className="eyebrow">The problem</div>
-          <h2>An allocator has three options. Two of them don't work.</h2>
+          <h2>Three ways to prove a number. Two don't work.</h2>
         </div>
         <div className="opts">
-          <div className="opt reveal">
+          <div className="opt opt-bad reveal">
             <span className="opt-mark">✕</span>
-            <h3>Take the PDF on faith</h3>
-            <p className="small muted">
-              Twelve good months in a document the manager produced himself. Every figure
-              on it is a claim. Nothing on it can be checked by the person being asked to
-              wire the money.
-            </p>
+            <h3>A PDF</h3>
+            <p className="small muted">The manager typed it himself.</p>
           </div>
-          <div className="opt reveal" style={{ "--d": "0.08s" } as CSSProperties}>
+          <div className="opt opt-bad reveal" style={delay(0.08)}>
             <span className="opt-mark">✕</span>
-            <h3>Ask the bank to cooperate</h3>
-            <p className="small muted">
-              An API, a data feed, a letter on headed paper. This is what every existing
-              fix asks for, and it is why every existing fix stalls. Goldman is not going
-              to sign your letter.
-            </p>
+            <h3>The bank's API</h3>
+            <p className="small muted">Goldman is not going to sign your letter.</p>
           </div>
-          <div className="opt opt-good reveal" style={{ "--d": "0.16s" } as CSSProperties}>
+          <div className="opt opt-good reveal" style={delay(0.16)}>
             <span className="opt-mark opt-mark-on">✓</span>
-            <h3>Read the signature already there</h3>
-            <p className="small muted">
-              Every statement email carries a DKIM signature: the bank's own key, over the
-              exact bytes, applied years ago without anyone thinking about it. Nobody has
-              to agree to anything. The proof is sitting in your inbox.
-            </p>
+            <h3>The DKIM signature</h3>
+            <p className="small muted">Already sent. Nobody had to agree to anything.</p>
           </div>
         </div>
       </section>
@@ -174,153 +204,123 @@ export function Home() {
       <section className="section">
         <div className="section-head reveal">
           <div className="eyebrow">How it works</div>
-          <h2>Four steps, and the bank never finds out.</h2>
+          <h2>Four steps. The bank never finds out.</h2>
         </div>
         <ol className="flow">
           <li className="flow-step reveal">
-            <span className="flow-n">01</span>
-            <h3>The email arrives</h3>
+            <span className="flow-icon">
+              <Glyph name="mail" />
+            </span>
+            <div className="flow-n">01</div>
+            <h3>Forward the statement</h3>
+            <p className="small muted">The email your broker already sends.</p>
+          </li>
+          <li className="flow-step reveal" style={delay(0.08)}>
+            <span className="flow-icon">
+              <Glyph name="key" />
+            </span>
+            <div className="flow-n">02</div>
+            <h3>Check the signature</h3>
             <p className="small muted">
-              The monthly statement your broker already sends. You forward it. There is no
-              integration to request and nobody to ask.
+              Real RSA, and we copy the DNS key down before it retires.
             </p>
           </li>
-          <li className="flow-step reveal" style={{ "--d": "0.08s" } as CSSProperties}>
-            <span className="flow-n">02</span>
-            <h3>The signature gets checked</h3>
+          <li className="flow-step reveal" style={delay(0.16)}>
+            <span className="flow-icon">
+              <Glyph name="block" />
+            </span>
+            <div className="flow-n">03</div>
+            <h3>Anchor on Monad</h3>
             <p className="small muted">
-              Real RSA against the DKIM header. We also copy down the DNS key exactly as it
-              stands today, because keys get retired, and a copy taken now is what keeps
-              this signature checkable in five years.
+              Every ingest. 0.3s blocks, so we prove the moment, not the day.
             </p>
           </li>
-          <li className="flow-step reveal" style={{ "--d": "0.16s" } as CSSProperties}>
-            <span className="flow-n">03</span>
-            <h3>The root lands on Monad</h3>
-            <p className="small muted">
-              Every ingest, not a nightly batch. Blocks confirm in 0.3 seconds, so we anchor
-              the moment rather than the day, and a month quietly dropped later leaves a
-              numbered gap anyone can count.
-            </p>
-          </li>
-          <li className="flow-step reveal" style={{ "--d": "0.24s" } as CSSProperties}>
-            <span className="flow-n">04</span>
-            <h3>The allocator checks it alone</h3>
-            <p className="small muted">
-              Their browser re folds all 47 Merkle leaves itself and reads the root off an
-              RPC they typed in. Our server is not in the trust path, and the offline bundle
-              does not need us at all.
-            </p>
+          <li className="flow-step reveal" style={delay(0.24)}>
+            <span className="flow-icon">
+              <Glyph name="eye" />
+            </span>
+            <div className="flow-n">04</div>
+            <h3>They check it without us</h3>
+            <p className="small muted">47 leaves re-folded in the allocator's browser.</p>
           </li>
         </ol>
       </section>
 
-      {/* 3. The punchline. Same number, different evidence, and the whole
-             disagreement is visible in one glance. */}
+      {/* 3. The punchline. Same number, different evidence, one glance. */}
       <section className="section">
         <div className="section-head reveal">
           <div className="eyebrow">Why it bites</div>
-          <h2>One typed row costs you the whole year.</h2>
+          <h2>One typed row costs the whole year.</h2>
         </div>
         <div className="versus">
           <a className="vs-card reveal" href={`/view/${DEMO_INVITES[0].token}`}>
             <div className="vs-name">Meridian Global Macro</div>
             <div className="vs-value">+21.89%</div>
-            <div className="vs-sub">annualized TWR, net of fees</div>
+            <div className="vs-sub">annualized TWR, net</div>
             <Ticks />
             <div className="vs-foot">
               <span className="badge badge-source_signed">
                 <span className="dot" />
                 source signed
               </span>
-              <span className="small muted">twelve statements, twelve signatures</span>
+              <span className="small muted">12 signed</span>
             </div>
           </a>
-          <a className="vs-card reveal" style={{ "--d": "0.1s" } as CSSProperties} href={`/view/${DEMO_INVITES[1].token}`}>
+          <a className="vs-card reveal" style={delay(0.1)} href={`/view/${DEMO_INVITES[1].token}`}>
             <div className="vs-name">Northwind Partners</div>
             <div className="vs-value">+21.89%</div>
-            <div className="vs-sub">annualized TWR, net of fees</div>
+            <div className="vs-sub">annualized TWR, net</div>
             <Ticks typed={7} />
             <div className="vs-foot">
               <span className="badge badge-self_reported">
                 <span className="dot" />
                 self reported
               </span>
-              <span className="small muted">eleven signed, one month typed in</span>
+              <span className="small muted">11 signed, 1 typed</span>
             </div>
           </a>
         </div>
         <p className="vs-caption small muted reveal">
-          Identical to the last digit, <span className="mono">0.218937808100</span>. A metric
-          carries the weakest evidence that fed it, so a single unverifiable month caps a
-          year of proof. That will feel punitive to a customer, and it is exactly right.
-          Open both and compare.
+          Identical to the digit. A metric carries the weakest evidence that fed it.
         </p>
       </section>
 
-      {/* 4. Three seats. Which door you came through decides what exists. */}
+      {/* 4. Three seats. Which door you came through decides what exists, so
+             the doors are left to say it themselves. */}
       <section className="section">
-        <div className="section-head reveal">
-          <div className="eyebrow">The demo</div>
-          <h2>Pick a seat. The product changes shape depending on which one.</h2>
-        </div>
         <div className="three-doors">
           <a className="door door-fund reveal" href="/manage">
             <div className="door-role">Sign in as</div>
             <div className="door-name">The fund</div>
-            <p className="small muted">
-              The platform's seat. The whole roster, every key any pod has handed out, and
-              the only seat that can take a new pod on.
-            </p>
+            <p className="small muted">Every pod, and the only seat that can add one.</p>
             <span className="arrow" aria-hidden>
               →
             </span>
           </a>
-          <a
-            className="door door-pm reveal"
-            style={{ "--d": "0.08s" } as CSSProperties}
-            href="/manage"
-          >
+          <a className="door door-pm reveal" style={delay(0.08)} href="/manage">
             <div className="door-role">Sign in as</div>
-            <div className="door-name">A portfolio manager</div>
-            <p className="small muted">
-              One book. The pod next door does not exist from this seat, and the refusal is
-              a 404 rather than a 403, because saying "not yours" leaks the roster one guess
-              at a time.
-            </p>
+            <div className="door-name">A manager</div>
+            <p className="small muted">One book. The pod next door 404s.</p>
             <span className="arrow" aria-hidden>
               →
             </span>
           </a>
-          <a
-            className="door door-allocator reveal"
-            style={{ "--d": "0.16s" } as CSSProperties}
-            href={DEMO_LINK}
-          >
-            <div className="door-role">No account at all</div>
+          <a className="door door-allocator reveal" style={delay(0.16)} href={DEMO_LINK}>
+            <div className="door-role">No account</div>
             <div className="door-name">An allocator</div>
-            <p className="small muted">
-              Outside the wall. One link, tied to your address, stamped with your name,
-              killable in the middle of a conversation.
-            </p>
+            <p className="small muted">One link. Watermarked, and revocable mid call.</p>
             <span className="arrow" aria-hidden>
               →
             </span>
           </a>
         </div>
-
-        <p className="small muted reveal" style={{ margin: "0 0 14px" }}>
-          Sign in is one click: the console shows a button per seat and the box arrives with
-          the token already in it. Or skip it and walk in as an allocator, through one of
-          these four keys.
-        </p>
 
         {DEMO_INVITES.map((invite, i) => (
           <a
             className="record-link reveal"
             key={invite.token}
             href={`/view/${invite.token}`}
-            style={{ "--d": `${0.04 * i}s` } as CSSProperties}
+            style={delay(0.04 * i)}
           >
             <div>
               <div className="name">{invite.record}</div>
@@ -331,16 +331,16 @@ export function Home() {
         ))}
       </section>
 
-      <p className="small muted">
-        Chain {config.data?.chain_id} ·{" "}
-        {config.data?.registry_address ? (
+      {/* Only when there is something to point at. An instance with no
+          registry says nothing here rather than explaining its own absence. */}
+      {config.data?.registry_address && (
+        <p className="small muted">
+          Chain {config.data.chain_id} ·{" "}
           <a href={`${config.data.explorer_url}/address/${config.data.registry_address}`}>
             {config.data.registry_address}
           </a>
-        ) : (
-          "no registry configured, so roots are computed but not anchored"
-        )}
-      </p>
+        </p>
+      )}
     </Page>
   );
 }

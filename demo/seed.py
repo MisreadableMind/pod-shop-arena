@@ -108,7 +108,7 @@ def seed(*, reset: bool = False, anchor: bool | None = None) -> dict[str, str]:
         )
         northwind = _record(
             session, NORTHWIND, "Northwind Partners",
-            "Same numbers, one month short of proof",
+            "Systematic multi-asset, USD",
         )
         lab = _record(
             session, EVIDENCE_LAB, "Evidence Lab",
