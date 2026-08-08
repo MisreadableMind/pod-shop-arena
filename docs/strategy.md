@@ -1,9 +1,6 @@
 # Nobody wants to be verified
 
-**Pod Arena · Strategy memo · August 2026 · Internal, draft**
-
-Here's what I think we're actually selling, who pays for it, how much, and what has to
-be true if we want $50M in three to five years.[^1]
+**PodShop Arena · Strategy memo · 8 August 2026 · Internal, draft**
 
 Companion files: the print version of this memo is [`strategy.html`](./strategy.html);
 the deck we show is [`deck/index.html`](./deck/index.html).
@@ -18,14 +15,14 @@ own.
 
 SOC 2 is the same shape. Nobody wants the report. It costs six figures, improves nothing
 a customer can see, and companies buy it because their buyers stopped signing without
-one. That's what Vanta built on.[^2]
+one. That's what Vanta built on.[^1]
 
 > **The allocator creates the demand.**
 > **The manager pays the bill.**
 
 We are not going to persuade managers that verification is good for them. The job is to
 get a small number of allocators people take seriously to say four words: *send it
-through Pod Arena*. Then we sell everyone in their pipeline the ability to comply.
+through PodShop Arena*. Then we sell everyone in their pipeline the ability to comply.
 
 ### Blockchain
 
@@ -55,7 +52,7 @@ ICP in one word: **deadline**.
 
 Maybe forty of them worldwide matter. Give them the product almost free for eighteen
 months. We aren't buying revenue from them. We're buying one sentence on their
-submission page: *we accept Pod Arena records.* Charge in year two, once the pipeline
+submission page: *we accept PodShop Arena records.* Charge in year two, once the pipeline
 already runs through us.
 
 **Free → $35–90k / yr from Y2**
@@ -93,7 +90,7 @@ cheques and a worse story for a buyer, so take it for proof, not as the plan.
 | Administrator deal | $120–350k / yr | Year 3. The step-change |
 
 A $50M exit needs roughly **$7–9.5M of ARR** growing 60%+, at six to eight times
-revenue. Get two strategic buyers in the room and $5–6M does it.
+revenue. Get two strategic buyers in the room and $5–6M does it.[^2]
 
 ### The ramp (ARR, $M)
 
@@ -191,9 +188,9 @@ asked.
 
 ---
 
-[^1]: Every number here is a model, and every model is wrong. The useful question is
-which direction, and we won't know until we try charging someone.
-
-[^2]: The analogy limps in one place: SOC 2 became near-mandatory on its own, and nothing
+[^1]: The analogy limps in one place: SOC 2 became near-mandatory on its own, and nothing
 forces an allocator to demand anything. Which is why the three signatures in §04 matter
 more than the product.
+
+[^2]: Every number here is a model, and every model is wrong. The useful question is
+which direction, and we won't know until we try charging someone.
