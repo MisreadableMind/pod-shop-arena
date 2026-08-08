@@ -26,12 +26,17 @@ const LABELS: Record<string, string> = {
   var_historical: "VaR 95%",
 };
 
+// Metrics where the direction is the point. The design system is achromatic —
+// no red/green — so an explicit leading + is what tells a gain from a loss.
+const SIGNED = new Set(["twr_cumulative", "twr_annualized", "modified_dietz"]);
+
 export function formatMetric(metric: Metric): string {
   const value = Number(metric.value);
+  const sign = SIGNED.has(metric.key) && value > 0 ? "+" : "";
   if (RATIO_AS_PERCENT.has(metric.key)) {
-    return `${(value * 100).toFixed(2)}%`;
+    return `${sign}${(value * 100).toFixed(2)}%`;
   }
-  return value.toFixed(2);
+  return `${sign}${value.toFixed(2)}`;
 }
 
 // Mirrors core/money.py. Two decimals is right far more often than it is
@@ -60,9 +65,12 @@ function shortHex(hex: string, size = 10): string {
 
 // -- tier -----------------------------------------------------------------
 
+/** The trust hierarchy is encoded by weight, not hue: solid fill for the
+ *  strongest evidence, then outline, then quiet outline, then greyed. A
+ *  colour-blind allocator reads the same ranking a colour-sighted one does. */
 export function TierBadge({ tier, label }: { tier: Tier; label?: string }) {
   return (
-    <span className="badge" style={{ color: `var(--tier-${tier})` }}>
+    <span className={`badge badge-${tier}`}>
       <span className="dot" />
       {label ?? tier.replace(/_/g, " ")}
     </span>
@@ -88,7 +96,11 @@ export function MetricGrid({ metrics, basis }: { metrics: Metric[]; basis: "net"
                 ? "neg"
                 : "";
         return (
-          <div className="metric" key={`${metric.key}-${metric.basis}`} title={metric.formula}>
+          <div
+            className="metric-tile"
+            key={`${metric.key}-${metric.basis}`}
+            title={metric.formula}
+          >
             <div className="label">{LABELS[metric.key] ?? metric.key}</div>
             <div className={`value ${tone}`}>{formatMetric(metric)}</div>
             {/* Nothing is displayed without its tier next to it. */}
@@ -101,6 +113,16 @@ export function MetricGrid({ metrics, basis }: { metrics: Metric[]; basis: "net"
 }
 
 // -- chart ----------------------------------------------------------------
+
+// Tier is drawn, not coloured: filled disc for signed evidence, filled but
+// lighter for attested, hollow for observed, hollow-and-faint for whatever
+// somebody typed. Same ranking the badges use.
+const DOT: Record<Tier, { fill: string; stroke: string; r: number }> = {
+  source_signed: { fill: "var(--color-onyx)", stroke: "var(--color-onyx)", r: 3.4 },
+  aggregator_attested: { fill: "var(--color-steel)", stroke: "var(--color-steel)", r: 3.2 },
+  platform_observed: { fill: "var(--surface-card)", stroke: "var(--color-slate-veil)", r: 3.2 },
+  self_reported: { fill: "var(--surface-card)", stroke: "var(--color-umber)", r: 3.8 },
+};
 
 /** Hand-rolled inline SVG, so the picture and the numbers cannot disagree.
  *  A charting library that silently interpolates or drops a point would be a
@@ -140,11 +162,23 @@ export function NavChart({
 
   return (
     <div className="chart-wrap">
-      <svg width={width} height={height} role="img" aria-label="Net asset value over time">
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        preserveAspectRatio="xMidYMid meet"
+        role="img"
+        aria-label="Net asset value over time"
+      >
         <defs>
+          {/* The dawn arc draws the curve. It is the only colour on the page,
+              and it is the same one on the hero and the brand mark. */}
+          <linearGradient id="dawnarc" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="var(--color-umber)" />
+            <stop offset="54%" stopColor="var(--color-steel)" />
+            <stop offset="100%" stopColor="var(--color-cream)" />
+          </linearGradient>
           <linearGradient id="navfill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.22" />
-            <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
+            <stop offset="0%" stopColor="var(--color-steel)" stopOpacity="0.14" />
+            <stop offset="100%" stopColor="var(--color-steel)" stopOpacity="0" />
           </linearGradient>
         </defs>
 
@@ -157,15 +191,15 @@ export function NavChart({
                 x2={width - pad.right}
                 y1={y(value)}
                 y2={y(value)}
-                stroke="var(--line)"
+                stroke="var(--hairline)"
               />
               <text
                 x={pad.left - 8}
                 y={y(value) + 4}
                 textAnchor="end"
-                fill="var(--muted)"
+                fill="var(--text-dim)"
                 fontSize="10"
-                fontFamily="var(--mono)"
+                fontFamily="var(--font-mono)"
               >
                 {money(value, currency)}
               </text>
@@ -174,22 +208,35 @@ export function NavChart({
         })}
 
         <path d={area} fill="url(#navfill)" />
-        <path d={path} fill="none" stroke="var(--accent)" strokeWidth="2" />
+        <path
+          d={path}
+          fill="none"
+          stroke="url(#dawnarc)"
+          strokeWidth="2.25"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
 
-        {series.map((point, i) => (
-          <circle
-            key={point.as_of}
-            cx={x(i)}
-            cy={y(point.amount_minor)}
-            r="3"
-            fill={`var(--tier-${point.tier})`}
-          >
-            <title>
-              {point.as_of} · {money(point.amount_minor, currency)} · {point.tier}
-            </title>
-          </circle>
-        ))}
+        {series.map((point, i) => {
+          const dot = DOT[point.tier];
+          return (
+            <circle
+              key={point.as_of}
+              cx={x(i)}
+              cy={y(point.amount_minor)}
+              r={dot.r}
+              fill={dot.fill}
+              stroke={dot.stroke}
+              strokeWidth="1.4"
+            >
+              <title>
+                {point.as_of} · {money(point.amount_minor, currency)} · {point.tier}
+              </title>
+            </circle>
+          );
+        })}
 
+        {/* Deposits and withdrawals differ by dash pattern, not by colour. */}
         {flowMarks.map((flow) => (
           <line
             key={`${flow.as_of}-${flow.amount_minor}`}
@@ -197,9 +244,9 @@ export function NavChart({
             x2={x(flow.index)}
             y1={pad.top}
             y2={height - pad.bottom}
-            stroke={flow.amount_minor > 0 ? "var(--tier-source_signed)" : "var(--tier-platform_observed)"}
-            strokeDasharray="3 3"
-            strokeOpacity="0.55"
+            stroke="var(--color-onyx)"
+            strokeDasharray={flow.amount_minor > 0 ? "5 4" : "1.5 4"}
+            strokeOpacity="0.34"
           >
             <title>
               {flow.amount_minor > 0 ? "Deposit" : "Withdrawal"} {flow.as_of}
@@ -207,23 +254,30 @@ export function NavChart({
           </line>
         ))}
 
-        <text x={pad.left} y={height - 8} fill="var(--muted)" fontSize="10" fontFamily="var(--mono)">
+        <text
+          x={pad.left}
+          y={height - 8}
+          fill="var(--text-dim)"
+          fontSize="10"
+          fontFamily="var(--font-mono)"
+        >
           {series[0].as_of}
         </text>
         <text
           x={width - pad.right}
           y={height - 8}
           textAnchor="end"
-          fill="var(--muted)"
+          fill="var(--text-dim)"
           fontSize="10"
-          fontFamily="var(--mono)"
+          fontFamily="var(--font-mono)"
         >
           {series[series.length - 1].as_of}
         </text>
       </svg>
-      <p className="small muted" style={{ marginTop: 4 }}>
-        Dotted lines are external flows. Point colour is the tier of that observation.
-        A return computed from the line alone would be wrong wherever money moved.
+      <p className="chart-note">
+        Long dashes are deposits, fine dashes are withdrawals. Filled points are signed by
+        the bank; hollow ones are weaker. Compute a return from the line alone and you'll
+        get it wrong everywhere money moved, which is why we don't.
       </p>
     </div>
   );
@@ -231,7 +285,15 @@ export function NavChart({
 
 // -- evidence -------------------------------------------------------------
 
-export function EvidenceTable({ evidence, token }: { evidence: Evidence[]; token: string }) {
+/** `token` is null in the manager's preview, where there is no invite to
+ *  download against — the row still renders, the link does not. */
+export function EvidenceTable({
+  evidence,
+  token,
+}: {
+  evidence: Evidence[];
+  token: string | null;
+}) {
   return (
     <table>
       <thead>
@@ -285,9 +347,13 @@ export function EvidenceTable({ evidence, token }: { evidence: Evidence[]; token
                 )}
               </td>
               <td>
-                <a className="small" href={api.documentUrl(token, item.sha256)}>
-                  .eml
-                </a>
+                {token ? (
+                  <a className="small" href={api.documentUrl(token, item.sha256)}>
+                    .eml
+                  </a>
+                ) : (
+                  <span className="small muted">.eml</span>
+                )}
               </td>
             </tr>
           );
@@ -357,7 +423,7 @@ export function VerifyPanel({
       push({
         name: "Check a Merkle path",
         state: ok ? "ok" : "bad",
-        detail: ok ? sample.label : "the path does not lead to the root",
+        detail: ok ? sample.label : "the path doesn't lead to the root",
       });
     } catch (error) {
       push({ name: "Check a Merkle path", state: "bad", detail: String(error) });
@@ -401,11 +467,14 @@ export function VerifyPanel({
   const allOk = checks.length > 0 && checks.every((c) => c.state === "ok");
 
   return (
-    <div className="card">
-      <h2>Verify it yourself</h2>
+    <div className="card card-accent">
+      <div className="card-head">
+        <h2>Verify it yourself</h2>
+        <span className="pill">runs in this browser</span>
+      </div>
       <p className="lede">
-        Every check below runs in this tab. Point it at any Monad RPC you like — ours is
-        deliberately not in the trust path.
+        Every check below runs in this tab, on your machine. Point it at any Monad RPC you
+        like. The whole idea is that ours isn't in the trust path.
       </p>
 
       <div className="row" style={{ marginBottom: 14 }}>
@@ -435,16 +504,14 @@ export function VerifyPanel({
       ))}
 
       {allOk && (
-        <p style={{ color: "var(--tier-source_signed)", marginBottom: 0 }}>
-          Verified locally. Nothing above took our word for anything.
-        </p>
+        <p className="verdict">All of it checked out, here. Nothing above took our word for anything.</p>
       )}
 
       <p className="small muted" style={{ marginTop: 16, marginBottom: 0 }}>
-        Or take the whole thing with you:{" "}
-        <a href={api.bundleUrl(token)}>download the evidence bundle</a> — the .eml files,
-        the DNS keys as captured, every Merkle proof — and run{" "}
-        <code>podarena-verify bundle</code> offline.
+        Or don't trust this page either.{" "}
+        <a href={api.bundleUrl(token)}>Download the bundle</a> — the .eml files, the DNS
+        keys as we captured them, every Merkle proof — and run{" "}
+        <code>podarena-verify bundle</code> on your own machine, offline.
       </p>
     </div>
   );
