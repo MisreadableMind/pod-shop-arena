@@ -121,6 +121,80 @@ export type AppConfig = {
   anchoring_enabled: boolean;
   demo_fixtures: boolean;
   methodology_version: string;
+  /** Null unless this instance runs the synthetic corpus. */
+  demo_admin_token: string | null;
+};
+
+export const PROFILES = [
+  "summary",
+  "ratios_and_risk",
+  "full_detail",
+  "full_plus_positions",
+] as const;
+
+export type ProfileSlug = (typeof PROFILES)[number];
+
+export type DisclosureRung = {
+  profile: ProfileSlug;
+  rank: number;
+  bytes: number;
+  keys: string[];
+  metric_keys: string[];
+  counts: {
+    metrics: number;
+    evidence: number;
+    findings: number;
+    nav_series: number;
+    positions: number;
+    merkle_leaves: number;
+  };
+};
+
+export type DisclosureMatrix = {
+  record: { slug: string; name: string };
+  profiles: DisclosureRung[];
+  sections: string[];
+};
+
+export type InviteRow = {
+  id: string;
+  viewer_email: string;
+  profile: ProfileSlug;
+  status: "active" | "revoked" | "expired";
+  nda_accepted_at: string | null;
+  expires_at: string;
+  created_at: string;
+  views: number;
+  last_seen_at: string | null;
+};
+
+export type AccessRow = {
+  at: string;
+  action: string;
+  viewer_email: string;
+  profile: string;
+  ip: string | null;
+  chain_tx: string | null;
+  explorer_url: string | null;
+};
+
+export type NewInvite = {
+  token: string;
+  profile: string;
+  viewer_email: string;
+  expires_at: string;
+  url: string;
+};
+
+export type RebuildResult = {
+  seq: number;
+  root: string;
+  tier: Tier;
+  metrics: number;
+  findings: number;
+  anchor_status: string;
+  tx_hash: string | null;
+  explorer_url: string | null;
 };
 
 export type AnchorTimeline = {
@@ -172,4 +246,54 @@ export const api = {
     fetch(`/api/records/${slug}/anchors`).then(json<AnchorTimeline>),
   bundleUrl: (token: string) => `/api/view/${token}/bundle`,
   documentUrl: (token: string, sha: string) => `/api/view/${token}/document/${sha}`,
+};
+
+// -- the manager's side ----------------------------------------------------
+//
+// Everything below needs the admin bearer token. It is held in localStorage
+// rather than a cookie on purpose: no cookie means no ambient authority, so a
+// link an allocator clicks can never carry the manager's credentials with it.
+
+const TOKEN_KEY = "podarena.admin";
+
+export const adminToken = {
+  get: () => localStorage.getItem(TOKEN_KEY),
+  set: (token: string) => localStorage.setItem(TOKEN_KEY, token),
+  clear: () => localStorage.removeItem(TOKEN_KEY),
+};
+
+async function authed<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const token = adminToken.get();
+  const response = await fetch(path, {
+    ...init,
+    headers: {
+      ...(init.headers ?? {}),
+      ...(token ? { authorization: `Bearer ${token}` } : {}),
+    },
+  });
+  if (response.status === 401 || response.status === 503) {
+    throw new Error("unauthorized");
+  }
+  return json<T>(response);
+}
+
+export const owner = {
+  view: (slug: string) => authed<RecordView>(`/api/records/${slug}/owner`),
+  disclosure: (slug: string) => authed<DisclosureMatrix>(`/api/records/${slug}/disclosure`),
+  preview: (slug: string, profile: ProfileSlug) =>
+    authed<RecordView>(`/api/records/${slug}/preview/${profile}`),
+  invites: (slug: string) => authed<InviteRow[]>(`/api/records/${slug}/invites`),
+  accessLog: (slug: string) => authed<AccessRow[]>(`/api/records/${slug}/access-log`),
+  createInvite: (slug: string, body: { viewer_email: string; profile: string }) =>
+    authed<NewInvite>(`/api/records/${slug}/invites`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    }),
+  revokeInvite: (id: string) =>
+    authed<{ id: string; revoked_at: string }>(`/api/invites/${id}/revoke`, {
+      method: "POST",
+    }),
+  rebuild: (slug: string) =>
+    authed<RebuildResult>(`/api/records/${slug}/rebuild`, { method: "POST" }),
 };
