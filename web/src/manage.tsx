@@ -27,7 +27,13 @@ import { Page } from "./shell";
  *  the box, because `demo_fixtures` and real evidence cannot both be true. */
 function LoginGate({ onAuthed }: { onAuthed: () => void }) {
   const logins = useQuery({ queryKey: ["demo-logins"], queryFn: api.demoLogins });
-  const [value, setValue] = useState("");
+  const [typed, setTyped] = useState<string | null>(null);
+
+  // The box arrives holding the fund's demo token. Nothing to copy from
+  // anywhere, nothing to look up — press Go. Typing takes over the moment you
+  // touch it, and on a real instance there is nothing to prefill so it starts
+  // empty, which is also the honest state.
+  const value = typed ?? logins.data?.[0]?.token ?? "";
 
   const submit = (token: string) => {
     if (!token.trim()) return;
@@ -59,10 +65,11 @@ function LoginGate({ onAuthed }: { onAuthed: () => void }) {
           <input
             type="text"
             value={value}
-            placeholder="or paste a token"
-            onChange={(event) => setValue(event.target.value)}
+            placeholder="paste a token"
+            onChange={(event) => setTyped(event.target.value)}
             onKeyDown={(event) => event.key === "Enter" && submit(value)}
             aria-label="Admin token"
+            className="mono"
           />
           <button onClick={() => submit(value)} disabled={!value.trim()}>
             Go
