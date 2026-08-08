@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="PodShop Arena">
+  <!-- One stroke doing both of this product's jobs: it starts as a check mark
+       and leaves as an equity curve. Drawn by the dawn arc (the gradient in
+       styles.css), stopped at the steel→cream half — the umber end is
+       dark-on-dark against Onyx and disappears by 16px. -->
+  <defs>
+    <linearGradient id="dawnarc" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#47657f"/>
+      <stop offset="100%" stop-color="#efe2ca"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#14181f"/>
+  <path d="M12 32 L22 43 C34 43 41 30 52 11"
+        fill="none" stroke="url(#dawnarc)" stroke-width="7"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
