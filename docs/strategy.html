@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PodShop Arena · Nobody Wants To Be Verified</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --onyx:#0c1018; --umber:#1e1310; --slate:#6d7074; --ash:#9e9fa3;
+    --canvas:#ffffff; --card:#f5f5f5; --inset:#fbfbfc;
+    --hairline:rgba(158,159,163,.35); --hairline-soft:rgba(158,159,163,.22);
+    --dawn-h:linear-gradient(100deg,rgb(30,19,16) 0%,rgb(24,38,68) 16%,rgb(90,118,159) 34%,rgb(135,161,196) 50%,rgb(193,211,230) 66%,rgb(254,249,225) 86%,rgb(247,243,240) 100%);
+    --font-display:'Fraunces','Playfair Display',Georgia,serif;
+    --font-sans:'Hanken Grotesk',ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+    --font-mono:ui-monospace,'SF Mono','JetBrains Mono',Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:#e9e9ec; color:var(--onyx);
+    font-family:var(--font-sans); font-size:11px; line-height:1.42; letter-spacing:-.005em;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    print-color-adjust:exact; -webkit-print-color-adjust:exact;
+  }
+  .doc{display:flex; flex-direction:column; align-items:center; gap:22px; padding:22px 0}
+
+  .page{
+    position:relative; width:210mm; height:297mm; flex:0 0 auto; overflow:hidden;
+    background:var(--canvas); padding:13mm 13mm 12mm;
+    box-shadow:0 12px 40px rgba(12,16,24,.13); display:flex; flex-direction:column;
+  }
+
+  /* ---- type ---- */
+  h1{font-family:var(--font-display); font-weight:400; font-size:34px; line-height:1.02; letter-spacing:-.028em; margin:6px 0 0; font-optical-sizing:auto; max-width:11ch}
+  h2{font-family:var(--font-display); font-weight:400; font-size:19px; line-height:1.1; letter-spacing:-.022em; margin:0}
+  h3{font-size:12px; font-weight:600; margin:0; letter-spacing:-.008em}
+  p{margin:0 0 5.5px}
+  p:last-child{margin-bottom:0}
+  b,strong{font-weight:600}
+  .eyebrow{font-family:var(--font-mono); font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--slate)}
+  .kicker{font-family:var(--font-mono); font-size:8.5px; letter-spacing:.15em; text-transform:uppercase; color:var(--ash)}
+  .dim{color:var(--slate)} .faint{color:var(--ash)}
+  .mono{font-family:var(--font-mono)} .num{font-variant-numeric:tabular-nums}
+  .lead{font-size:13px; line-height:1.45; color:var(--slate); max-width:76ch}
+  sup{font-family:var(--font-mono); font-size:7.5px; vertical-align:super; line-height:0; color:var(--ash); padding-left:1px}
+
+  /* ---- head / rules ---- */
+  .masthead{display:flex; justify-content:space-between; align-items:flex-start; gap:24px}
+  .dotmark{width:13px; height:13px; border-radius:4px; background:var(--dawn-h); display:inline-block; transform:rotate(45deg)}
+  .brandmark{display:flex; gap:8px; align-items:center; font-family:var(--font-mono); font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:var(--slate)}
+  .stamp{text-align:right; font-family:var(--font-mono); font-size:8.5px; letter-spacing:.06em; color:var(--ash); line-height:1.7; text-transform:uppercase}
+  .gradrule{flex:0 0 auto; height:2.5px; background-image:var(--dawn-h); border-radius:2px; margin:8px 0 0}
+
+  /* ---- sections ---- */
+  section{margin-top:6px}
+  .sechead{display:flex; align-items:baseline; gap:9px; margin-bottom:6px}
+  .sechead .n{font-family:var(--font-mono); font-size:9.5px; color:var(--ash); letter-spacing:.1em}
+  .sechead .rule{flex:1; height:1px; background:var(--hairline-soft)}
+
+  /* ---- blocks ---- */
+  .quote{
+    font-family:var(--font-display); font-size:14.5px; line-height:1.22; letter-spacing:-.022em;
+    border-left:2px solid var(--onyx); padding:1px 0 1px 13px; margin:8px 0;
+  }
+  ul.dd{list-style:none; margin:4px 0 0; padding:0}
+  ul.dd li{position:relative; padding-left:34px; font-size:10.5px; line-height:1.38; color:var(--slate); margin-top:2px}
+  ul.dd li::before{position:absolute; left:0; top:.15em; font-family:var(--font-mono); font-size:8px; letter-spacing:.1em; text-transform:uppercase}
+  ul.dd li.do::before{content:"Do"; color:var(--onyx)}
+  ul.dd li.no::before{content:"Don’t"; color:#8a3324}
+  ul.dd li b{color:var(--onyx)}
+  .note{background:var(--inset); border:1px solid var(--hairline-soft); border-radius:9px; padding:8px 12px}
+  .note .kicker{margin-bottom:4px}
+  .dark{background:var(--umber); color:#fff; border-radius:10px; padding:12px 14px}
+  .dark .kicker{color:rgba(255,255,255,.55)}
+  .dark .dim{color:rgba(255,255,255,.72)}
+
+  .grid{display:grid; gap:9px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,1fr)}
+
+  /* ICP cards */
+  .icp{background:var(--card); border:1px solid var(--hairline-soft); border-radius:10px; padding:8px 12px; display:flex; gap:12px}
+  .icp .idx{flex:0 0 auto; font-family:var(--font-mono); font-size:9.5px; color:var(--ash); letter-spacing:.1em; padding-top:2px; width:20px}
+  .icp .role{font-family:var(--font-mono); font-size:8.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--slate); margin-bottom:3px}
+  .icp h3{margin-bottom:4px}
+  .icp p{font-size:10.5px; line-height:1.38; color:var(--slate)}
+  .icp .price{margin-top:5px; display:inline-block; font-family:var(--font-mono); font-size:9.5px; color:var(--onyx); background:#fff; border:1px solid var(--hairline); border-radius:40px; padding:2.5px 9px}
+
+  /* tables */
+  table{width:100%; border-collapse:collapse; font-size:10.5px}
+  th{text-align:left; font-family:var(--font-mono); font-size:8.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ash); font-weight:400; padding:0 8px 5px 0; border-bottom:1px solid var(--hairline)}
+  td{padding:5px 8px 5px 0; border-bottom:1px solid var(--hairline-soft); vertical-align:top; line-height:1.4}
+  tr:last-child td{border-bottom:0}
+  .t-price td:nth-child(2){color:var(--onyx); font-weight:600; white-space:nowrap}
+  .t-price td:nth-child(3){color:var(--slate); font-size:9.5px}
+
+  /* ARR strip */
+  .ramp{display:flex; gap:6px; margin-top:8px}
+  .ramp .yr{flex:1; background:var(--card); border:1px solid var(--hairline-soft); border-radius:8px; padding:6px 8px; text-align:center}
+  .ramp .yr .y{font-family:var(--font-mono); font-size:8.5px; letter-spacing:.12em; color:var(--ash)}
+  .ramp .yr .v{font-family:var(--font-display); font-size:17px; letter-spacing:-.02em; margin-top:1px; font-variant-numeric:tabular-nums}
+  .ramp .yr .c{font-size:9px; color:var(--slate); margin-top:1px}
+  .ramp .yr.hot{background:var(--onyx); border-color:var(--onyx); color:#fff}
+  .ramp .yr.hot .y{color:rgba(255,255,255,.55)} .ramp .yr.hot .c{color:rgba(255,255,255,.72)}
+
+  /* numbered list */
+  ol.reqs{list-style:none; margin:0; padding:0; counter-reset:r}
+  ol.reqs li{counter-increment:r; display:flex; gap:9px; padding:5px 0; border-bottom:1px solid var(--hairline-soft); font-size:10.5px; line-height:1.44}
+  ol.reqs li:last-child{border-bottom:0; padding-bottom:0}
+  ol.reqs li::before{content:counter(r,decimal-leading-zero); flex:0 0 auto; font-family:var(--font-mono); font-size:9px; color:var(--ash); letter-spacing:.08em; padding-top:1px}
+  ol.reqs .t{color:var(--slate)}
+  ol.reqs .t b{color:var(--onyx)}
+  .cost{font-family:var(--font-mono); font-size:9px; color:var(--ash); white-space:nowrap}
+
+  /* cut columns */
+  .cut{border:1px solid var(--hairline-soft); border-radius:10px; padding:9px 12px; background:var(--inset)}
+  .cut.keep{background:var(--onyx); border-color:var(--onyx); color:#fff}
+  .cut.keep .kicker{color:rgba(255,255,255,.55)}
+  .cut p{font-size:10px; line-height:1.45; color:var(--slate); margin:4px 0 0}
+  .cut.keep p{color:rgba(255,255,255,.82)}
+
+  .cols{display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start}
+  .spacer{flex:1; min-height:0}
+  .verdictline{font-family:var(--font-display); font-size:16.5px; line-height:1.16; letter-spacing:-.024em; margin:1px 0 6px}
+
+  .notes{border-top:1px solid var(--hairline-soft); padding-top:5px; margin-top:5px; display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  .notes p{font-size:9px; line-height:1.45; color:var(--ash); margin:0}
+  .notes b{color:var(--slate); font-family:var(--font-mono); font-size:8px}
+
+  .foot{display:flex; justify-content:space-between; align-items:center; padding-top:7px; margin-top:6px; border-top:1px solid var(--hairline-soft);
+        font-family:var(--font-mono); font-size:8.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ash)}
+
+  @media print{
+    body{background:#fff}
+    .doc{gap:0; padding:0}
+    .page{box-shadow:none; margin:0; break-after:page; page-break-after:always}
+    .page:last-child{break-after:auto; page-break-after:auto}
+  }
+  @page{ size:A4; margin:0 }
+</style>
+</head>
+<body>
+<div class="doc">
+
+<!-- ══════════════════════ PAGE 1 ══════════════════════ -->
+<div class="page">
+
+  <div class="masthead">
+    <div>
+      <div class="brandmark"><span class="dotmark"></span> PodShop Arena</div>
+      <h1>Nobody wants to be verified</h1>
+    </div>
+    <div class="stamp">Strategy memo<br/>8 August 2026<br/>Internal · Draft</div>
+  </div>
+  <div class="gradrule"></div>
+
+  <!-- 1 -->
+  <section>
+    <div class="sechead"><span class="n">01</span><h2>Demand</h2><span class="rule"></span></div>
+    <p>Portfolio managers want money. Allocators want to spend less time on diligence. Verification is the toll booth between them, and a toll booth is an excellent thing to own.</p>
+    <p>SOC 2 is the same shape. Nobody wants the report. It costs six figures, improves nothing a customer can see, and companies buy it because their buyers stopped signing without one. That’s what Vanta built on.<sup>[1]</sup></p>
+    <div class="quote">The allocator creates the demand.<br/>The manager pays the bill.</div>
+    <p>We are not going to persuade managers that verification is good for them. The job is to get a small number of allocators people take seriously to say four words: <i>send it through PodShop Arena</i>. Then we sell everyone in their pipeline the ability to comply.</p>
+    <div class="note" style="margin-top:8px">
+      <div class="kicker">Blockchain</div>
+      <ul class="dd">
+        <li class="do">Keep the anchoring and the ZK proofs. They are cheap and they work.</li>
+        <li class="do">Sell one sentence: <b>an independent party pulled this straight from the administrator, and nobody could touch it.</b></li>
+        <li class="no">Lead with “blockchain” in front of an allocator. In that room it is a reason to stop listening, not a moat. The Merkle root is <i>how</i>, not <i>what</i>.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section>
+    <div class="sechead"><span class="n">02</span><h2>Our ICP</h2><span class="rule"></span></div>
+    <p style="margin-bottom:8px">Allocators create the demand but do not pay first: long cycles, no deadline, no real budget for sourcing managers. The order below matters more than the list.</p>
+
+    <div class="grid" style="gap:8px">
+      <div class="icp">
+        <div class="idx">01</div>
+        <div>
+          <div class="role">The payer</div>
+          <h3>A manager running $12–300M who is raising right now</h3>
+          <p>Twelve to thirty-six months of live track, a real administrator, and a tearsheet in Excel that gets discounted the moment an allocator opens it. Every DDQ eats six weeks. They have a deadline and a budget line that already says <i>fundraising</i>. That’s the whole ICP in one word: deadline.</p>
+          <span class="price">$950–2,950 / mo</span>
+        </div>
+      </div>
+      <div class="icp">
+        <div class="idx">02</div>
+        <div>
+          <div class="role">The demand-maker</div>
+          <h3>Emerging-manager programs, seeders, funds of funds, family offices, external allocation desks</h3>
+          <p>Maybe forty of them worldwide matter. Give them the product almost free for eighteen months. We aren’t buying revenue from them. We’re buying one sentence on their submission page: <i>we accept PodShop Arena records.</i> Charge in year two, once the pipeline already runs through us.</p>
+          <span class="price">Free → $35–90k / yr from Y2</span>
+        </div>
+      </div>
+      <div class="icp">
+        <div class="idx">03</div>
+        <div>
+          <div class="role">The multiplier</div>
+          <h3>Fund administrators</h3>
+          <p>SS&amp;C, Citco, Apex, Alter Domus, IQ-EQ. They hold the data already, and all of them are climbing up-stack into GP services. White-label us across their emerging-manager book and one signature is worth two hundred managers. Start in year two, because it’s also the conversation where somebody buys us.</p>
+          <span class="price">$120–350k / yr + rev share</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid g2" style="margin-top:9px">
+      <div class="note">
+        <div class="kicker">Why not employers</div>
+        <p style="font-size:10px; line-height:1.44; color:var(--slate)"><b style="color:var(--onyx)">Employers vetting PM candidates.</b> It looks like the sharpest pain in the industry, and it is. Nobody can check whether a candidate really ran $500M at 1.8 Sharpe. But that P&amp;L belongs to the old employer, who will never hand it over. Nothing to connect to.</p>
+      </div>
+      <div class="note">
+        <div class="kicker">Crypto funds</div>
+        <p style="font-size:10px; line-height:1.44; color:var(--slate)"><b style="color:var(--onyx)">Crypto funds.</b> Read-only exchange keys take ten minutes. No prime broker, no SFTP. And nobody distrusts a track record more than a crypto allocator. Paying customers within a month. Small cheques and a worse story for a buyer, so take it for proof, not as the plan.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="spacer"></div>
+  <div class="foot"><span>PodShop Arena · Nobody wants to be verified</span><span>01 / 02</span></div>
+</div>
+
+<!-- ══════════════════════ PAGE 2 ══════════════════════ -->
+<div class="page">
+
+  <div class="cols">
+    <!-- LEFT -->
+    <div>
+      <section style="margin-top:0">
+        <div class="sechead"><span class="n">03</span><h2>What we sell</h2><span class="rule"></span></div>
+        <table class="t-price">
+          <thead><tr><th>Line</th><th>Price</th><th>Note</th></tr></thead>
+          <tbody>
+            <tr><td>Manager subscription</td><td>$0.95–2.95k/mo</td><td>By connections and records</td></tr>
+            <tr><td>Per-raise data room</td><td>$12–35k</td><td>Comes out of the raise, not IT</td></tr>
+            <tr><td>Allocator seats</td><td>$35–90k/yr</td><td>Year 2. Free before that</td></tr>
+            <tr><td>Administrator deal</td><td>$120–350k/yr</td><td>Year 3. The step-change</td></tr>
+          </tbody>
+        </table>
+
+        <p style="margin-top:11px">A $50M exit needs roughly <b>$7–9.5M of ARR</b> growing 60%+, at six to eight times revenue. Get two strategic buyers in the room and $5–6M does it.<sup>[2]</sup></p>
+
+        <div class="ramp">
+          <div class="yr"><div class="y">Y1</div><div class="v">0.35</div><div class="c">30 mgrs</div></div>
+          <div class="yr"><div class="y">Y2</div><div class="v">1.4</div><div class="c">110</div></div>
+          <div class="yr"><div class="y">Y3</div><div class="v">4.0</div><div class="c">260</div></div>
+          <div class="yr hot"><div class="y">Y4</div><div class="v">8.0</div><div class="c">480 · sell here</div></div>
+          <div class="yr"><div class="y">Y5</div><div class="v">13</div><div class="c">700</div></div>
+        </div>
+        <p class="faint mono" style="font-size:8.5px; letter-spacing:.1em; text-transform:uppercase; margin-top:5px">ARR in $ millions</p>
+
+        <div class="dark" style="margin-top:10px">
+          <div class="kicker">How much to raise</div>
+          <p style="font-size:11px; line-height:1.5; margin-top:4px"><b>Cap the raise at $6–7M.</b> Pre-seed $1.2M, seed $4.8M, then stop.</p>
+          <p class="dim" style="font-size:10px; line-height:1.5">A $18M round makes a $50M exit unacceptable to the board. The size of the round sets the floor on an acceptable outcome before we have sold anything. The alternative is a small round, most of the company retained, and a strategic buyer. On that path we probably could not raise from a growth fund.</p>
+        </div>
+
+        <div class="kicker" style="margin-top:11px">Who buys us</div>
+        <p style="margin-top:4px">Fund administrators first. They want the data layer and the GP relationship. Then allocator tech: ION, Nasdaq, With Intelligence, Canoe, Allvue. Then fundraising plumbing: Carta, Juniper Square, Passthrough.</p>
+        <p>The multiple depends on how many buyers are in the room, not on how good the product is. Two bidders is 10×. One is 5×.</p>
+      </section>
+    </div>
+
+    <!-- RIGHT -->
+    <div>
+      <section style="margin-top:0">
+        <div class="sechead"><span class="n">04</span><h2>Order of implementation</h2><span class="rule"></span></div>
+        <p class="faint" style="font-size:9.5px; margin-bottom:5px">Ordered by what blocks us soonest.</p>
+        <ol class="reqs">
+          <li><div class="t"><b>A written regulatory opinion in all three jurisdictions.</b> We need counsel in the UK, EU and US to state on paper that we are a technology provider, not an adviser and not a broker-dealer. The entity, the contracts, and every claim the product is allowed to make hang off that one classification. Nothing else can be committed until it is written down. <span class="cost">$50–85k · 8–12 wks · this week</span></div></li>
+          <li><div class="t"><b>Two or three fund administrators.</b> Plaid has no place here — it is US retail banking and reaches none of the people we sell to. Administrators hold the data <i>and</i> their client list is our ICP. Everything else is IBKR Flex and SFTP.</div></li>
+          <li><div class="t"><b>SOC 2 Type II and ISO 27001.</b> Nine months, so it starts in month one. No allocator lets us near a manager’s data without them.</div></li>
+          <li><div class="t"><b>An auditor’s report on the maths.</b> An ISAE 3000 engagement on the calculation engine. It buys more trust than every proof mechanism in the codebase put together. <span class="cost">$30–60k</span></div></li>
+          <li><div class="t"><b>Three allocators willing to say so in writing.</b> Without them there is no demand to sell against.</div></li>
+          <li><div class="t"><b>An answer to “will my positions leak?”</b> Not ZK. That’s year two. Year one it’s architecture: positions never touch a path a viewer can reach, metrics only by default, embargo on. They have to feel it in the demo, not read it in a PDF.</div></li>
+          <li><div class="t"><b>Insurance.</b> We publish claims about other people’s numbers. One of them will be wrong eventually.</div></li>
+        </ol>
+      </section>
+
+      <section>
+        <div class="sechead"><span class="n">05</span><h2>Where we sell</h2><span class="rule"></span></div>
+        <div class="verdictline">Not EU or US. London or New York.</div>
+        <p style="font-size:10.5px">London. English, the second-largest concentration of hedge funds, a workable regulator, a dense community of seeders and emerging managers, and meetings we can reach without a visa. Continental Europe on its own is too fragmented and too cheap to build $8M of ARR on.</p>
+        <p style="font-size:10.5px">But build for the SEC Marketing Rule from day one anyway. It’s the strictest regime, retrofitting costs more, and our buyer is American. A company with 60–70% US revenue is simply worth more to them.</p>
+        <div class="note" style="margin-top:7px">
+          <div class="kicker">Order of operations</div>
+          <p style="font-size:10px; color:var(--slate); line-height:1.5">EU parent. London, months 0–12. Delaware entity and one American salesperson at month 12. Most new ARR from the US by year three.</p>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- 6 -->
+  <section>
+    <div class="sechead"><span class="n">06</span><h2>What we build, in order</h2><span class="rule"></span></div>
+    <p style="margin-bottom:8px">The spec treats nearly everything as MVP. That’s a three-year build, and we have about nine months of runway at a time.</p>
+    <div class="grid g3">
+      <div class="cut keep">
+        <div class="kicker">Build now</div>
+        <p>Administrator ingestion → immutable snapshot → deterministic metrics → badge → the fence, with its NDA gate, watermark and audit log → the disclaimer engine. That’s the product.</p>
+      </div>
+      <div class="cut">
+        <div class="kicker">Build next</div>
+        <p>ZK proofs. GIPS composites. Attribution. The attestor role. None of them closes the first fifty customers, so none of them comes first.</p>
+      </div>
+      <div class="cut">
+        <div class="kicker">Build after that</div>
+        <p>Retail broker connectors: Robinhood, Coinbase, Schwab. Discovery marketplace. Reputation graph. Peer cohorts. Hiring workflow. No money in them today, and no allocator has ever asked.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="spacer"></div>
+
+
+  <div class="notes">
+    <p><b>[1]</b> The analogy limps in one place: SOC 2 became near-mandatory on its own, and nothing forces an allocator to demand anything. Which is why the three signatures in §04 matter more than the product.</p>
+    <p><b>[2]</b> Every number here is a model, and every model is wrong. The useful question is which direction, and we won’t know until we try charging someone.</p>
+  </div>
+
+  <div class="foot"><span>PodShop Arena · Nobody wants to be verified</span><span>02 / 02</span></div>
+</div>
+
+</div>
+</body>
+</html>

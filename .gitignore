@@ -1,0 +1,31 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.env.*
+!.env.example
+*.egg-info/
+.pytest_cache/
+
+# blobs are content-addressed evidence; never commit them
+var/
+blobs/
+
+# frontend
+web/node_modules/
+web/dist/
+web/.vite/
+
+# foundry
+contracts/out/
+contracts/cache/
+contracts/broadcast/
+contracts/lib/
+
+# editors / local tooling
+.idea/
+.claude/settings.local.json
+
+# typescript incremental build cache
+web/tsconfig.tsbuildinfo

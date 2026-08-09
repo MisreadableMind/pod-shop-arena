@@ -1,0 +1,1587 @@
+/* "New Genre" — the visual system described in DESIGN.md §6, applied here.
+   Near-white surfaces, blue-black Onyx text, and exactly one piece of colour:
+   the dawn-arc gradient (charred umber → steel blue → cream). It draws the
+   hero, the brand mark, the verification band, the equity curve. Everything
+   else is achromatic. Elevation comes from lightness and a hairline, never a
+   drop shadow.
+
+   Two deliberate deviations from DESIGN.md, both on purpose:
+
+   1. No webfonts. DESIGN.md names Fraunces and Hanken Grotesk; the whole
+      pitch of this product is that it keeps working when nobody else's server
+      answers, and that should be true of the page too. The three type *roles*
+      are kept — display serif, UI sans, mono for hashes — on system stacks.
+      Swap --font-display / --font-sans if you ever self-host the real pair.
+   2. Container is 1100px, not 1400px. This app is one column of prose and
+      evidence; 1400 would set 160-character lines. */
+
+:root {
+  /* Raw palette ------------------------------------------------------- */
+  --color-onyx: #14181f;
+  --color-onyx-soft: #2b323c;
+  --color-slate-veil: #616a77;
+  --color-porcelain: #fbfaf7;
+  --color-paper: #ffffff;
+  --color-bone: #f4f2ed;
+  --color-umber: #6d4030;
+  --color-steel: #47657f;
+  --color-cream: #efe2ca;
+
+  /* Semantic aliases -------------------------------------------------- */
+  --surface-page: var(--color-porcelain);
+  --surface-card: var(--color-paper);
+  --surface-inset: var(--color-bone);
+  --surface-deep: var(--color-onyx);
+
+  --text-body: var(--color-onyx);
+  --text-dim: var(--color-slate-veil);
+  --text-invert: #f7f4ee;
+
+  --hairline: rgba(20, 24, 31, 0.12);
+  --hairline-soft: rgba(20, 24, 31, 0.07);
+  --hairline-strong: rgba(20, 24, 31, 0.26);
+
+  --gradient-dawn-arc: linear-gradient(
+    101deg,
+    var(--color-umber) 0%,
+    var(--color-steel) 54%,
+    var(--color-cream) 100%
+  );
+  /* Same arc, stopped before cream — for anything drawn on a white ground,
+     where the cream end would simply disappear. */
+  --gradient-dawn-arc-ink: linear-gradient(
+    96deg,
+    var(--color-umber) 0%,
+    var(--color-steel) 100%
+  );
+
+  --radius-card: 16px;
+  --radius-tile: 12px;
+  --radius-pill: 50px;
+
+  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, "Hoefler Text",
+    Georgia, serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial,
+    sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+
+  --shell-max: 1100px;
+  --step: 0.15s ease;
+
+  /* Legacy compatibility -----------------------------------------------
+     Older variable names, remapped onto New Genre so the inline styles
+     scattered through the components stay coherent. The four trust tiers
+     resolve to points on the dawn arc rather than to green/blue/amber/red:
+     the hierarchy reads onyx → steel → slate → umber, strongest to weakest,
+     with no traffic-light semantics anywhere. */
+  --ink: var(--surface-page);
+  --surface: var(--surface-card);
+  --surface-2: var(--surface-inset);
+  --line: var(--hairline);
+  --text: var(--text-body);
+  --muted: var(--text-dim);
+  --accent: var(--color-steel);
+  --radius: var(--radius-card);
+  --serif: var(--font-display);
+  --sans: var(--font-sans);
+  --mono: var(--font-mono);
+
+  --tier-source_signed: var(--color-onyx);
+  --tier-aggregator_attested: var(--color-steel);
+  --tier-platform_observed: var(--color-slate-veil);
+  --tier-self_reported: var(--color-umber);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: var(--surface-page);
+  color: var(--text-body);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.6;
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: var(--hairline-strong);
+  transition: text-decoration-color var(--step);
+}
+a:hover {
+  text-decoration-color: currentColor;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+h1 {
+  font-size: clamp(2rem, 3.4vw, 2.6rem);
+  line-height: 1.1;
+}
+h2 {
+  font-size: 1.42rem;
+  line-height: 1.2;
+}
+h3 {
+  font-size: 1.08rem;
+}
+
+p {
+  margin: 0 0 14px;
+}
+p:last-child {
+  margin-bottom: 0;
+}
+
+code,
+.mono {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  letter-spacing: 0;
+}
+
+.muted {
+  color: var(--text-dim);
+}
+.small {
+  font-size: 0.82rem;
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.spread {
+  justify-content: space-between;
+}
+
+/* Page frame ---------------------------------------------------------- */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.shell {
+  width: 100%;
+  max-width: var(--shell-max);
+  margin: 0 auto;
+  padding: 40px 24px 88px;
+  flex: 1;
+}
+
+/* Sticky frosted header. */
+.masthead {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: rgba(251, 250, 247, 0.76);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  border-bottom: 1px solid var(--hairline);
+}
+.masthead-inner {
+  max-width: var(--shell-max);
+  margin: 0 auto;
+  padding: 15px 24px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.wordmark {
+  font-family: var(--font-display);
+  font-size: 1.24rem;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+}
+/* The brand mark is drawn by the dawn arc. */
+.wordmark span {
+  background: var(--gradient-dawn-arc-ink);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.masthead .tagline {
+  color: var(--text-dim);
+  font-size: 0.83rem;
+}
+
+/* Full-bleed hero. The arc runs left-to-right into cream, so the copy is
+   held to the umber/steel half and given a scrim — contrast is not left to
+   chance. */
+.hero {
+  background-image: linear-gradient(
+      to right,
+      rgba(10, 12, 16, 0.34) 0%,
+      rgba(10, 12, 16, 0) 64%
+    ),
+    var(--gradient-dawn-arc);
+  color: #fbf7f0;
+  padding: 74px 24px 82px;
+}
+.hero-inner {
+  max-width: var(--shell-max);
+  margin: 0 auto;
+}
+.hero h1 {
+  font-size: clamp(2.3rem, 5.2vw, 3.7rem);
+  color: inherit;
+  max-width: 19ch;
+  font-weight: 400;
+}
+.hero-lede {
+  margin: 22px 0 0;
+  max-width: 60ch;
+  font-size: 1.04rem;
+  line-height: 1.62;
+  color: rgba(251, 247, 240, 0.86);
+}
+
+/* Two ways in, one loud and one quiet: look at a record, or take a seat. */
+.hero-cta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 30px;
+}
+.cta {
+  display: inline-block;
+  background: var(--color-porcelain);
+  color: var(--color-onyx);
+  border-radius: var(--radius-pill);
+  padding: 13px 28px;
+  font-weight: 500;
+  font-size: 0.98rem;
+  text-decoration: none;
+  transition: transform var(--step), background var(--step), border-color var(--step);
+}
+.cta:hover {
+  background: #fff;
+  transform: translateX(2px);
+}
+.cta-ghost {
+  background: transparent;
+  color: #fbf7f0;
+  border: 1px solid rgba(251, 247, 240, 0.42);
+}
+.cta-ghost:hover {
+  background: rgba(251, 247, 240, 0.12);
+  border-color: rgba(251, 247, 240, 0.78);
+}
+.cta-note {
+  display: block;
+  max-width: 44ch;
+  margin: 16px 0 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: rgba(251, 247, 240, 0.68);
+}
+
+/* Dark footer, bookending the arc. */
+.site-footer {
+  background: var(--surface-deep);
+  color: rgba(247, 244, 238, 0.66);
+}
+.site-footer::before {
+  content: "";
+  display: block;
+  height: 3px;
+  background: var(--gradient-dawn-arc);
+}
+.footer-inner {
+  max-width: var(--shell-max);
+  margin: 0 auto;
+  padding: 46px 24px 58px;
+  display: flex;
+  justify-content: space-between;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+.site-footer .footer-mark {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--text-invert);
+}
+/* Same dawn arc that draws the mark in the masthead, bookending the page. */
+.site-footer .footer-mark span {
+  background: var(--gradient-dawn-arc);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.site-footer a {
+  color: var(--text-invert);
+  text-decoration-color: rgba(247, 244, 238, 0.32);
+}
+.footer-meta {
+  font-size: 0.82rem;
+  text-align: right;
+  max-width: 46ch;
+}
+
+/* Cards --------------------------------------------------------------- */
+
+.card {
+  background: var(--surface-card);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  padding: 26px 28px;
+  margin-bottom: 20px;
+}
+.card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.card > h2,
+.card > h3 {
+  margin-bottom: 4px;
+}
+.card .lede {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  margin: 0 0 18px;
+  max-width: 74ch;
+}
+
+/* The dawn-arc accent band marks the one card that carries the proof. */
+.card-accent {
+  position: relative;
+  overflow: hidden;
+}
+.card-accent::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: var(--gradient-dawn-arc);
+}
+
+.record-head {
+  padding-bottom: 24px;
+  margin-bottom: 28px;
+  border-bottom: 1px solid var(--hairline);
+}
+.record-head::before {
+  content: "";
+  display: block;
+  width: 66px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--gradient-dawn-arc);
+  margin-bottom: 20px;
+}
+.record-head p {
+  margin: 8px 0 0;
+}
+
+/* Pills, badges ------------------------------------------------------- */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.02em;
+  color: var(--text-dim);
+  background: var(--surface-inset);
+  border-radius: var(--radius-pill);
+  padding: 4px 11px;
+  white-space: nowrap;
+}
+
+/* Badges encode the trust hierarchy by weight, not by hue:
+   solid fill > filled outline > quiet outline > greyed. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border-radius: var(--radius-pill);
+  padding: 4px 13px;
+  font-family: var(--font-mono);
+  font-size: 0.71rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.badge .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.badge-source_signed {
+  background: var(--color-onyx);
+  color: var(--text-invert);
+}
+.badge-aggregator_attested {
+  color: var(--color-steel);
+  border-color: currentColor;
+}
+.badge-platform_observed {
+  color: var(--text-dim);
+  border-color: var(--hairline-strong);
+}
+.badge-platform_observed .dot,
+.badge-self_reported .dot {
+  background: transparent;
+  border: 1.5px solid currentColor;
+}
+.badge-self_reported {
+  background: var(--surface-inset);
+  color: var(--text-dim);
+  border-color: var(--hairline-soft);
+}
+
+/* Metric tiles -------------------------------------------------------- */
+
+.grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(184px, 1fr));
+}
+
+.metric-tile {
+  background: var(--surface-inset);
+  border: 1px solid var(--hairline-soft);
+  border-radius: var(--radius-tile);
+  padding: 15px 17px;
+}
+.metric-tile .label {
+  color: var(--text-dim);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+}
+.metric-tile .value {
+  font-size: 1.62rem;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  margin-top: 6px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+/* Gain and loss are read from the sign, not from colour. Both resolve to
+   Onyx on purpose — the + or − does the work. */
+.metric-tile .value.pos,
+.metric-tile .value.neg {
+  color: var(--text-body);
+}
+.metric-tile .sub {
+  color: var(--text-dim);
+  font-size: 0.7rem;
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+}
+
+/* Hashlines — key/value rows for cryptographic values. */
+.hashline {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 20px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--hairline-soft);
+}
+.hashline:last-child {
+  border-bottom: none;
+}
+.hashline .k {
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+.hashline .v {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  text-align: right;
+  word-break: break-all;
+}
+
+/* Tables -------------------------------------------------------------- */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+}
+th {
+  text-align: left;
+  color: var(--text-dim);
+  font-weight: 500;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--hairline);
+}
+td {
+  padding: 12px;
+  border-bottom: 1px solid var(--hairline-soft);
+  vertical-align: top;
+}
+tr:last-child td {
+  border-bottom: none;
+}
+td.num,
+th.num {
+  font-family: var(--font-mono);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Controls ------------------------------------------------------------ */
+
+button {
+  font: inherit;
+  font-size: 0.87rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--text-invert);
+  background: var(--color-onyx);
+  border: 1px solid var(--color-onyx);
+  border-radius: var(--radius-pill);
+  padding: 9px 20px;
+  cursor: pointer;
+  transition: background var(--step), border-color var(--step), opacity var(--step);
+}
+button:hover:not(:disabled) {
+  background: var(--color-onyx-soft);
+  border-color: var(--color-onyx-soft);
+}
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+button.ghost {
+  background: transparent;
+  color: var(--text-body);
+  border-color: var(--hairline-strong);
+}
+button.ghost:hover:not(:disabled) {
+  background: var(--surface-inset);
+  border-color: var(--hairline-strong);
+}
+
+input[type="text"] {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  background: var(--surface-inset);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-pill);
+  color: var(--text-body);
+  padding: 9px 16px;
+  flex: 1;
+  min-width: 240px;
+  transition: border-color var(--step), background var(--step);
+}
+input[type="text"]:focus {
+  outline: none;
+  background: var(--surface-card);
+  border-color: var(--hairline-strong);
+}
+
+/* Verification checks ------------------------------------------------- */
+
+.check {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--hairline-soft);
+}
+.check:last-child {
+  border-bottom: none;
+}
+.check .mark {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.mark.ok {
+  color: var(--text-invert);
+  background: var(--color-onyx);
+}
+.mark.bad {
+  color: var(--text-invert);
+  background: var(--color-umber);
+}
+.mark.wait {
+  color: var(--text-dim);
+  border-color: var(--hairline-strong);
+}
+
+.verdict {
+  margin: 18px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--hairline);
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  letter-spacing: -0.02em;
+}
+
+/* Findings, banners --------------------------------------------------- */
+
+.finding {
+  border-left: 2px solid var(--hairline-strong);
+  padding: 6px 0 6px 15px;
+  margin-bottom: 14px;
+}
+.finding:last-child {
+  margin-bottom: 0;
+}
+.finding.critical {
+  border-left-color: var(--color-umber);
+}
+.finding .kind {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+.banner {
+  position: relative;
+  background: var(--surface-inset);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  padding: 14px 18px 14px 22px;
+  font-size: 0.86rem;
+  color: var(--text-dim);
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+.banner::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--gradient-dawn-arc);
+}
+.banner strong {
+  color: var(--text-body);
+  font-weight: 500;
+}
+
+/* Record list --------------------------------------------------------- */
+
+.record-link {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 20px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-tile);
+  background: var(--surface-card);
+  padding: 17px 20px;
+  margin-bottom: 10px;
+  color: inherit;
+  text-decoration: none;
+  transition: background var(--step), border-color var(--step);
+}
+.record-link:last-child {
+  margin-bottom: 0;
+}
+.record-link:hover {
+  background: var(--surface-inset);
+  border-color: var(--hairline-strong);
+}
+.record-link .name {
+  font-family: var(--font-display);
+  font-size: 1.14rem;
+  letter-spacing: -0.02em;
+}
+.record-link .arrow {
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+/* Chart --------------------------------------------------------------- */
+
+.chart-wrap svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.chart-note {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  margin-top: 10px;
+  max-width: 74ch;
+}
+
+/* The manager's side --------------------------------------------------
+   Same system, one signal of difference: an onyx rail under the masthead.
+   A manager glancing at a screenshot should know in a quarter second whether
+   they are looking at their own view or at what they published. */
+
+.owner-rail {
+  background: var(--surface-deep);
+  color: rgba(247, 244, 238, 0.72);
+}
+.owner-rail-inner {
+  max-width: var(--shell-max);
+  margin: 0 auto;
+  padding: 9px 24px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+}
+.page-owner .masthead {
+  border-bottom-color: transparent;
+}
+
+/* One rail per seat. The fund's is onyx, the PM's is steel — a screenshot
+   should say whose eyes you are looking through before you read a word. */
+.rail-pm {
+  background: var(--color-steel);
+  color: rgba(255, 255, 255, 0.86);
+}
+.owner-rail strong {
+  letter-spacing: 0.14em;
+  color: #fff;
+}
+.seat-pill {
+  border-color: var(--color-onyx);
+  color: var(--color-onyx);
+}
+.seat-pill.seat-pm {
+  border-color: var(--color-steel);
+  color: var(--color-steel);
+}
+
+/* Sign-in: one button per seat, and the buttons carry the argument. */
+.seat-button {
+  display: grid;
+  grid-template-columns: 46px 1fr auto;
+  align-items: baseline;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  background: var(--surface-card);
+  color: inherit;
+  border: 1px solid var(--hairline);
+  border-left: 3px solid var(--color-steel);
+  border-radius: var(--radius-tile);
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: background var(--step), border-color var(--step);
+}
+.seat-button.seat-fund {
+  border-left-color: var(--color-onyx);
+}
+.seat-button:hover {
+  background: var(--surface-inset);
+  border-color: var(--hairline-strong);
+}
+.seat-button:hover.seat-fund {
+  border-left-color: var(--color-onyx);
+}
+.seat-role {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+}
+.seat-name {
+  font-weight: 500;
+}
+.seat-scope {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-dim);
+}
+
+.creds {
+  background: var(--surface-inset);
+  border: 1px solid var(--hairline-soft);
+  border-radius: var(--radius-tile);
+  padding: 16px 18px;
+}
+
+/* Doors on the landing page. Three seats, three left-edge marks: the fund is
+   onyx, the PM is steel, the allocator is unmarked because they are outside the
+   wall and that is the point. */
+.three-doors {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.door-fund,
+.door-pm {
+  border-left: 3px solid var(--color-onyx);
+}
+.door-pm {
+  border-left-color: var(--color-steel);
+}
+.door-allocator {
+  border-left: 3px dashed var(--hairline-strong);
+}
+.door {
+  position: relative;
+  display: block;
+  background: var(--surface-card);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  padding: 22px 24px 24px;
+  color: inherit;
+  text-decoration: none;
+  overflow: hidden;
+  transition: background var(--step), border-color var(--step);
+}
+.door::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: var(--gradient-dawn-arc);
+  opacity: 0;
+  transition: opacity var(--step);
+}
+.door:hover {
+  background: var(--surface-inset);
+  border-color: var(--hairline-strong);
+}
+.door:hover::before {
+  opacity: 1;
+}
+.door-role {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+  color: var(--text-dim);
+}
+.door-name {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  letter-spacing: -0.02em;
+  margin: 6px 0 8px;
+}
+.door p {
+  max-width: 40ch;
+}
+.door .arrow {
+  position: absolute;
+  top: 22px;
+  right: 24px;
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+}
+
+/* The allocator's half of the disclosure contract. */
+.profile-strip {
+  background: var(--surface-inset);
+  border: 1px solid var(--hairline-soft);
+  border-radius: var(--radius-tile);
+  padding: 14px 18px;
+  margin-bottom: 20px;
+}
+.profile-strip > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.profile-strip .k {
+  color: var(--text-dim);
+  font-size: 0.82rem;
+}
+.profile-strip p {
+  max-width: 78ch;
+}
+
+.pill-on {
+  background: var(--color-onyx);
+  color: var(--text-invert);
+}
+.pill-absent {
+  background: transparent;
+  border: 1px dashed var(--hairline-strong);
+  color: var(--text-dim);
+}
+
+/* Disclosure matrix. Columns are clickable; the live one is filled onyx. */
+.matrix-wrap {
+  overflow-x: auto;
+}
+.matrix {
+  min-width: 560px;
+}
+.matrix th:first-child,
+.matrix td:first-child {
+  text-align: left;
+  white-space: nowrap;
+}
+.matrix .matrix-col {
+  cursor: pointer;
+  text-align: center;
+  transition: background var(--step), color var(--step);
+}
+.matrix th.matrix-col {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+}
+.matrix .matrix-col:hover {
+  background: var(--surface-inset);
+}
+.matrix .matrix-col.on {
+  background: var(--color-onyx);
+  color: var(--text-invert);
+}
+.matrix th.matrix-col.on {
+  border-bottom-color: var(--color-onyx);
+}
+.matrix-bytes td {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.cell-yes {
+  font-variant-numeric: tabular-nums;
+}
+.cell-no {
+  color: var(--text-dim);
+  opacity: 0.55;
+}
+.matrix .matrix-col.on .cell-no {
+  color: var(--text-invert);
+}
+
+/* The allocator payload, rendered inside a frame so nobody mistakes it for
+   the manager's own numbers. */
+.preview-frame {
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-tile);
+  overflow: hidden;
+  background: var(--surface-page);
+}
+.preview-bar {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 9px 14px;
+  background: var(--surface-inset);
+  border-bottom: 1px solid var(--hairline);
+  color: var(--text-dim);
+}
+.preview-body {
+  padding: 20px 18px 22px;
+}
+
+/* Invites. */
+.invite-form {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+select {
+  font: inherit;
+  font-size: 0.84rem;
+  background: var(--surface-inset);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-pill);
+  color: var(--text-body);
+  padding: 9px 16px;
+  cursor: pointer;
+}
+.invite-issued {
+  margin-top: 18px;
+  padding: 16px 18px;
+  background: var(--surface-inset);
+  border: 1px solid var(--hairline-soft);
+  border-radius: var(--radius-tile);
+}
+button.small-btn {
+  font-size: 0.76rem;
+  padding: 5px 14px;
+}
+
+.status {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: var(--radius-pill);
+  padding: 3px 11px;
+  border: 1px solid transparent;
+}
+.status-active {
+  background: var(--color-onyx);
+  color: var(--text-invert);
+}
+.status-revoked {
+  color: var(--color-umber);
+  border-color: currentColor;
+}
+.status-expired {
+  color: var(--text-dim);
+  border-color: var(--hairline-strong);
+}
+
+/* Landing page ---------------------------------------------------------
+
+   The public page is the only surface here that has to sell rather than
+   report, so it is the only one that moves: sections arrive as you reach
+   them, the pipeline's connectors run, and the hero card checks a signature
+   on a loop. All of it is decoration laid over a page that reads perfectly
+   well standing still, which is exactly why prefers-reduced-motion turns
+   every bit of it off at the bottom of this block. Motion that carried
+   information could not be switched off like that. */
+
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 0.6s cubic-bezier(0.22, 0.7, 0.3, 1),
+    transform 0.6s cubic-bezier(0.22, 0.7, 0.3, 1);
+  transition-delay: var(--d, 0s);
+  will-change: opacity, transform;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+
+.section {
+  margin-bottom: 66px;
+}
+.section:last-of-type {
+  margin-bottom: 40px;
+}
+.section-head {
+  margin-bottom: 24px;
+}
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-mono);
+  font-size: 0.67rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--text-dim);
+}
+.eyebrow::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--hairline);
+}
+.section-head h2 {
+  margin-top: 12px;
+  font-size: clamp(1.55rem, 2.7vw, 2.05rem);
+  max-width: 24ch;
+}
+
+/* Hero: copy on the umber half where the scrim is, the animated card on the
+   cream half where a dark panel reads best. */
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 52px;
+  align-items: center;
+}
+
+.proof-card {
+  background: rgba(16, 19, 25, 0.6);
+  backdrop-filter: blur(12px) saturate(1.2);
+  -webkit-backdrop-filter: blur(12px) saturate(1.2);
+  border: 1px solid rgba(255, 255, 255, 0.17);
+  border-radius: var(--radius-card);
+  padding: 17px 19px 19px;
+  color: rgba(251, 247, 240, 0.94);
+}
+.proof-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+.proof-head .mono {
+  font-size: 0.74rem;
+}
+.proof-from {
+  font-size: 0.7rem;
+  color: rgba(251, 247, 240, 0.55);
+}
+.proof-sig {
+  position: relative;
+  overflow: hidden;
+  font-size: 0.63rem;
+  line-height: 1.55;
+  color: rgba(251, 247, 240, 0.5);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 9px;
+  padding: 8px 10px;
+  word-break: break-all;
+}
+/* The scan: a band of cream sweeps the signature, then the verdict lands. */
+.proof-sig::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -45%;
+  width: 45%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(239, 226, 202, 0.42),
+    transparent
+  );
+  animation: scan 7s ease-in-out infinite;
+}
+@keyframes scan {
+  0% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  30% {
+    transform: translateX(330%);
+    opacity: 1;
+  }
+  36%,
+  100% {
+    transform: translateX(330%);
+    opacity: 0;
+  }
+}
+.proof-rows {
+  margin: 13px 0 14px;
+}
+.proof-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.11);
+  font-size: 0.8rem;
+  color: rgba(251, 247, 240, 0.62);
+}
+.proof-row:last-child {
+  border-bottom: none;
+}
+.proof-row b {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: rgba(251, 247, 240, 0.96);
+}
+/* Both verdicts occupy the same cell so the swap has nothing to reflow. */
+.proof-verdict {
+  display: grid;
+  min-height: 26px;
+  align-items: center;
+}
+.proof-verdict > * {
+  grid-area: 1 / 1;
+}
+.proof-wait {
+  font-size: 0.66rem;
+  letter-spacing: 0.02em;
+  color: rgba(251, 247, 240, 0.5);
+  animation: waitOut 7s ease-in-out infinite;
+}
+.proof-ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  justify-self: start;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-onyx);
+  background: var(--color-cream);
+  border-radius: var(--radius-pill);
+  padding: 5px 14px;
+  animation: okIn 7s ease-in-out infinite;
+}
+.proof-tick {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+@keyframes waitOut {
+  0%,
+  33% {
+    opacity: 1;
+  }
+  39%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes okIn {
+  0%,
+  35% {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  45%,
+  93% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+    transform: none;
+  }
+}
+
+/* The three options. Two fail, and they say so with a mark rather than a
+   paragraph explaining that they failed. */
+.opts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+.opt {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-card);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  padding: 22px 24px 24px;
+}
+.opt h3 {
+  margin: 16px 0 6px;
+  font-size: 1.14rem;
+}
+.opt p {
+  margin: 0;
+}
+.opt-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--hairline-strong);
+  color: var(--text-dim);
+  font-size: 0.94rem;
+}
+.opt-mark-on {
+  background: var(--color-onyx);
+  border-color: var(--color-onyx);
+  color: var(--text-invert);
+}
+/* The two that fail look like they failed: no fill, a dashed edge, and a
+   heading that has given up half its ink. */
+.opt-bad {
+  background: transparent;
+  border-style: dashed;
+}
+.opt-bad h3 {
+  color: var(--text-dim);
+}
+.opt-good {
+  border-color: var(--hairline-strong);
+}
+.opt-good::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: var(--gradient-dawn-arc);
+}
+
+/* The pipeline. Connectors are marching ants in the gutter, which is the one
+   place on this page where the motion is doing a little work: it says which
+   way the evidence travels. */
+.flow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 30px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.flow-step {
+  position: relative;
+}
+.flow-step::after {
+  content: "";
+  position: absolute;
+  top: 22px;
+  right: -30px;
+  width: 30px;
+  height: 2px;
+  background-image: linear-gradient(
+    90deg,
+    var(--hairline-strong) 0 7px,
+    transparent 7px 13px
+  );
+  background-size: 13px 2px;
+  animation: march 0.85s linear infinite;
+}
+.flow-step:last-child::after {
+  display: none;
+}
+@keyframes march {
+  to {
+    background-position: 13px 0;
+  }
+}
+.flow-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 1px solid var(--hairline);
+  background: var(--surface-card);
+  color: var(--color-onyx);
+}
+.flow-icon svg {
+  width: 22px;
+  height: 22px;
+}
+.flow-n {
+  font-family: var(--font-mono);
+  font-size: 0.67rem;
+  letter-spacing: 0.14em;
+  color: var(--text-dim);
+  margin-top: 14px;
+}
+.flow-step h3 {
+  margin: 5px 0 7px;
+  font-size: 1.02rem;
+}
+.flow-step p {
+  margin: 0;
+}
+
+/* Same number, different evidence. The whole argument in one glance. */
+.versus {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.vs-card {
+  display: block;
+  background: var(--surface-card);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  padding: 22px 24px 24px;
+  color: inherit;
+  text-decoration: none;
+  transition: background var(--step), border-color var(--step);
+}
+.vs-card:hover {
+  background: var(--surface-inset);
+  border-color: var(--hairline-strong);
+}
+.vs-name {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+}
+.vs-value {
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 4.4vw, 3rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  margin: 10px 0 4px;
+}
+.vs-sub {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-bottom: 18px;
+}
+.vs-foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+.vs-caption {
+  max-width: 76ch;
+  margin: 16px 0 0;
+}
+
+/* Twelve months as twelve marks. Solid is a signature; the dashed one is
+   somebody's keyboard, and it keeps breathing after the rest have settled. */
+.ticks {
+  display: flex;
+  gap: 5px;
+}
+.tick {
+  flex: 1;
+  height: 24px;
+  border-radius: 4px;
+  background: var(--color-onyx);
+  transform: scaleY(0.2);
+  transform-origin: bottom;
+  opacity: 0;
+}
+.reveal.in .tick {
+  animation: tickIn 0.42s cubic-bezier(0.22, 0.7, 0.3, 1) forwards;
+  animation-delay: calc(var(--i) * 42ms + 120ms);
+}
+.tick.typed {
+  background: transparent;
+  border: 1.5px dashed var(--color-umber);
+}
+.reveal.in .tick.typed {
+  animation:
+    tickIn 0.42s cubic-bezier(0.22, 0.7, 0.3, 1) forwards,
+    breathe 2.4s ease-in-out 1s infinite;
+}
+@keyframes tickIn {
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.36;
+  }
+}
+
+@media (max-width: 900px) {
+  .hero-grid,
+  .three-doors,
+  .opts,
+  .versus {
+    grid-template-columns: 1fr;
+  }
+  .hero-grid {
+    gap: 34px;
+  }
+  .flow {
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .flow-step::after {
+    display: none;
+  }
+}
+
+@media (max-width: 620px) {
+  .flow {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Everything above is theatre. This turns all of it off without changing a
+   word of what the page says. */
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .proof-sig::after,
+  .proof-wait,
+  .proof-ok,
+  .flow-step::after,
+  .reveal.in .tick,
+  .reveal.in .tick.typed {
+    animation: none;
+  }
+  .proof-wait {
+    opacity: 0;
+  }
+  .proof-ok,
+  .tick {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Per-viewer watermark ------------------------------------------------ */
+
+.watermark {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.watermark span {
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  color: rgba(20, 24, 31, 0.045);
+  transform: rotate(-28deg);
+  white-space: nowrap;
+  line-height: 3.2;
+  text-align: center;
+}
+
+@media (max-width: 720px) {
+  .hero {
+    padding: 52px 22px 56px;
+  }
+  .card {
+    padding: 22px 20px;
+  }
+  .footer-meta {
+    text-align: left;
+  }
+}
